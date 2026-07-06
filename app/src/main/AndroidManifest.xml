@@ -188,6 +188,14 @@
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />
 
+        <service
+            android:name=".car.VeluneCarAppService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="androidx.car.app.CarAppService" />
+            </intent-filter>
+        </service>
+
         <activity
             android:name=".DebugActivity"
             android:exported="true"

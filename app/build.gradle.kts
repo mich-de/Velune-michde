@@ -130,7 +130,7 @@ android {
     }
 
     androidResources {
-        generateLocaleConfig = true
+        generateLocaleConfig = false
     }
 
     packaging {
@@ -197,6 +197,7 @@ dependencies {
     implementation(libs.media3.okhttp)
     implementation("androidx.media3:media3-ui:${libs.versions.media3.get()}")
     implementation(libs.squigglyslider)
+    implementation(libs.car.app)
 
     implementation(libs.room.runtime)
     implementation(libs.kuromoji.ipadic)

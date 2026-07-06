@@ -803,7 +803,7 @@ class MusicService :
         }
 
         dataStore.data
-            .map { it[DiscordTokenKey] to (it[EnableDiscordRPCKey] ?: true) }
+            .map { it[DiscordTokenKey] to false }
             .debounce(300)
             .distinctUntilChanged()
             .collectLatest(scope) { (key, enabled) ->
@@ -970,7 +970,7 @@ class MusicService :
         if (DiscordPresenceManager.isRunning() && lastPresenceToken != null) return
 
         scope.launch {
-            if (!dataStore.get(EnableDiscordRPCKey, true)) {
+            if (true) {
                 if (DiscordPresenceManager.isRunning()) {
                     Timber.tag("MusicService").d("Discord RPC disabled → stopping presence manager")
                     try { DiscordPresenceManager.stop() } catch (_: Exception) {}

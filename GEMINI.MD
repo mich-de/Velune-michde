@@ -1,0 +1,38 @@
+# Gemini Persistent Memory Log - Velune Android Auto Optimization
+
+## Architectural Context
+- Velune uses Android Media3 library APIs to support media browser & playback capabilities.
+- The playback service is `MusicService` (`MediaLibraryService`) with callback helper `MediaLibrarySessionCallback` (`MediaLibrarySession.Callback`).
+- The user is using a **7-inch vehicle touch screen** which has limited display real estate and requires safety-compliant, shallow menu trees.
+- **Android SDK Path:** `C:\Users\mdeangelis\AppData\Local\Android\Sdk`
+- **ADB Executable:** [adb.exe](file:///C:/Users/mdeangelis/AppData/Local/Android/Sdk/platform-tools/adb.exe)
+- **Android Studio Executable:** [studio64.exe](file:///C:/Program%20Files/Android/Android%20Studio/bin/studio64.exe)
+
+## Architectural Decisions
+1. **Shortcut Root Nodes**: Rather than browsing through nested menus, we will surface "Liked Songs" and "Downloaded Songs" directly on the main root menu. This allows users to start playing music in 2 taps.
+2. **Category Content Styles**: Top-level directory folders (Songs, Artists, Albums, Playlists) will use `CONTENT_STYLE_LIST_ITEM` styling hints instead of grids to fit the compact 7-inch display better. Actual folders with album/playlist art will retain `CONTENT_STYLE_GRID_ITEM`.
+3. **Custom Playback Commands**: The custom player actions layout (`Like`, `Repeat`, `Shuffle`, `Start Radio`) is already implemented and properly priority-ordered, ensuring the most useful commands (like Favoriting) are prominent on the Android Auto player screen.
+
+## Session Log
+- **2026-07-03**: Cloned codebase and performed static analysis of the playback architecture. Drafted the implementation plan (`IMPLEMENTATION_PLAN.MD`) and task list (`TASKS.MD`).
+- **2026-07-03**: Implemented Android Auto 7-inch touch screen optimizations:
+  - Modified `browsableMediaItem` helper in `MediaLibrarySessionCallback.kt` to accept `browsableHint` and `playableHint`.
+  - Configured top-level root folders (Songs, Artists, Albums, Playlists) to display as List items (`CONTENT_STYLE_LIST_ITEM`) to prevent bulky, hard-to-interact grids on compact displays.
+  - Added direct menu shortcuts for `Liked Songs` and `Downloaded Songs` on the root level for immediate 2-tap playback start.
+  - Updated `TASKS.MD` to mark playback services tasks as complete.
+- **2026-07-03**: Conducted security and privacy audit. Verified dependency declarations, network protocols, the JavaScript execution engine (Rhino), database queries (Room), and Discord Rich Presence tokens. Confirmed the codebase is **SAFE** and contains no trojans or data leak backdoors. Documented details in [security_audit_report.md](file:///C:/Users/mdeangelis/.gemini/antigravity-cli/brain/20ea1c87-5ba5-48e9-bf5f-b7532c93810a/security_audit_report.md).
+- **2026-07-03**: Completely disabled Discord RPC (Kizzy integration) inside `MusicService.kt` to ensure user privacy, prevent background HTTP requests to `workers.dev`, and optimize battery usage for Android Auto.
+- **2026-07-03**: Installed Android Studio via `winget` and verified paths of `adb` and `studio64` are saved in memory.
+- **2026-07-06**: Implemented Android Auto Custom UI (Phase 3):
+  - Added `androidx.car.app:app:1.7.0` dependency via version catalog.
+  - Updated `automotive_app_desc.xml` with `template` capability requirement.
+  - Declared `VeluneCarAppService` in `AndroidManifest.xml` with `androidx.car.app.CarAppService` intent filter.
+  - Created `VeluneCarAppService.kt` — extends `CarAppService`, creates `VeluneSession`.
+  - Created `VeluneSession.kt` — connects to `MusicService` via `MediaController`, renders:
+    - `BrowseRootScreen`: `ListTemplate` with 5 categories (Liked Songs, Songs, Artists, Albums, Playlists).
+    - `SearchScreen`: `SearchTemplate` with `onSearchSubmitted` callback.
+  - Playback triggered via `MediaController.setMediaItems()` → resolved by existing `onSetMediaItems` in `MediaLibrarySessionCallback.kt`.
+  - Built and installed APK successfully on device.
+  - Fixed build issues: Gradle SSL certificate (used cached dist), JDK 21 path (set to Studio's JBR), API mismatches (`CarAppService.onCreateSession()`, `MediaController` implements `Player`, no `Player.UNSET_TIME`, `SearchCallback` as explicit object).
+  - **Branch:** `feat/android-auto-ui`
+  - **Next (V2):** Sub-category browsing with database-backed lists, `PlaybackTemplate` with custom controls.

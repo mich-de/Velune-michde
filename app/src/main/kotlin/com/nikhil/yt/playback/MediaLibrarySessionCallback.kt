@@ -239,11 +239,28 @@ constructor(
                     MusicService.ROOT ->
                         listOf(
                             browsableMediaItem(
+                                "${MusicService.PLAYLIST}/${PlaylistEntity.LIKED_PLAYLIST_ID}",
+                                context.getString(R.string.liked_songs),
+                                null,
+                                drawableUri(R.drawable.favorite),
+                                MediaMetadata.MEDIA_TYPE_PLAYLIST,
+                                browsableHint = CONTENT_STYLE_LIST_ITEM,
+                            ),
+                            browsableMediaItem(
+                                "${MusicService.PLAYLIST}/${PlaylistEntity.DOWNLOADED_PLAYLIST_ID}",
+                                context.getString(R.string.downloaded_songs),
+                                null,
+                                drawableUri(R.drawable.download),
+                                MediaMetadata.MEDIA_TYPE_PLAYLIST,
+                                browsableHint = CONTENT_STYLE_LIST_ITEM,
+                            ),
+                            browsableMediaItem(
                                 MusicService.SONG,
                                 context.getString(R.string.songs),
                                 null,
                                 drawableUri(R.drawable.music_note),
                                 MediaMetadata.MEDIA_TYPE_PLAYLIST,
+                                browsableHint = CONTENT_STYLE_LIST_ITEM,
                             ),
                             browsableMediaItem(
                                 MusicService.ARTIST,
@@ -251,6 +268,7 @@ constructor(
                                 null,
                                 drawableUri(R.drawable.artist),
                                 MediaMetadata.MEDIA_TYPE_FOLDER_ARTISTS,
+                                browsableHint = CONTENT_STYLE_LIST_ITEM,
                             ),
                             browsableMediaItem(
                                 MusicService.ALBUM,
@@ -258,6 +276,7 @@ constructor(
                                 null,
                                 drawableUri(R.drawable.album),
                                 MediaMetadata.MEDIA_TYPE_FOLDER_ALBUMS,
+                                browsableHint = CONTENT_STYLE_LIST_ITEM,
                             ),
                             browsableMediaItem(
                                 MusicService.PLAYLIST,
@@ -265,6 +284,7 @@ constructor(
                                 null,
                                 drawableUri(R.drawable.queue_music),
                                 MediaMetadata.MEDIA_TYPE_FOLDER_PLAYLISTS,
+                                browsableHint = CONTENT_STYLE_LIST_ITEM,
                             ),
                         )
 
@@ -648,6 +668,8 @@ constructor(
         subtitle: String?,
         iconUri: Uri?,
         mediaType: Int = MediaMetadata.MEDIA_TYPE_MUSIC,
+        browsableHint: Int = CONTENT_STYLE_GRID_ITEM,
+        playableHint: Int = CONTENT_STYLE_LIST_ITEM,
     ) = MediaItem
         .Builder()
         .setMediaId(id)
@@ -661,7 +683,7 @@ constructor(
                 .setIsPlayable(false)
                 .setIsBrowsable(true)
                 .setMediaType(mediaType)
-                .setExtras(browsableExtras())
+                .setExtras(browsableExtras(browsableHint, playableHint))
                 .build(),
         ).build()
 
