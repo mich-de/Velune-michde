@@ -20,7 +20,7 @@
 
 </div>
 
-### 🎧 YouTube Music — con Android Auto Custom UI
+### 🎧 YouTube Music client with Android Auto Custom UI
 
 🚫 No Ads • 💰 No Subscription • ⚡ Full Control • 🚗 AA Template-based
 
@@ -37,13 +37,13 @@
 
 ## 🚗 Android Auto Custom UI
 
-Questo fork aggiunge il supporto **template-based** per Android Auto con `androidx.car.app:1.7.0`, ottimizzato per schermi 7" orizzontali.
+This fork adds **template-based** Android Auto support via `androidx.car.app:1.7.0`, optimized for 7-inch horizontal screens.
 
-### Novità
-- **`CarAppService` + `VeluneSession`** — sostituisce la UI generica di Android Auto con template custom
-- **`ListTemplate`** — navigazione categorie: Brani, Artisti, Album, Playlist, Preferiti
-- **`SearchTemplate`** — ricerca vocale integrata con Google Assistant
-- **Navigazione ottimizzata** — percorsi ridotti a 2 tap per iniziare la riproduzione
+### What's new
+- **`CarAppService` + `VeluneSession`** — replaces Android Auto's default generic UI with custom templates
+- **`ListTemplate`** — category browsing: Songs, Artists, Albums, Playlists, Liked Songs
+- **`SearchTemplate`** — voice search with Google Assistant integration
+- **Optimized navigation** — 2-tap playback from root categories
 
 ### Architecture
 ```
@@ -57,14 +57,14 @@ CarAppService → VeluneSession → BrowseRootScreen (ListTemplate)
                MediaLibrarySessionCallback.onSetMediaItems()
 ```
 
-### V2 (in arrivo)
-- Sub-category browsing (artista → album → brani)
-- `PlaybackTemplate` con controlli custom (like, repeat, shuffle)
-- Album art nelle liste tramite Coil
+### Planned (V2)
+- Sub-category browsing (artist → albums → songs)
+- `PlaybackTemplate` with custom controls (like, repeat, shuffle)
+- Album art via Coil
 
 ---
 
-## 🎯 Highlight Feature
+## 🎯 Highlights
 
 ### 🎤 Real-Time Synced Lyrics
 
@@ -140,8 +140,8 @@ velune/
 
 ## 🔗 Original Project
 
-Questo è un fork di [Velune](https://github.com/nikhilvishwakarma00/Velune) by Nikhil.  
-Tutte le feature originali sono preservate. Le modifiche sono nel branch `feat/android-auto-ui`.
+This is a fork of [Velune](https://github.com/nikhilvishwakarma00/Velune) by Nikhil.  
+All original features are preserved. Customizations live on the `feat/android-auto-ui` branch.
 
 ## ⚖️ Legal
 
