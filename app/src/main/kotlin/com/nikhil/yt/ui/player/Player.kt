@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -846,7 +847,7 @@ fun BottomSheetPlayer(
                                 ) {
                                     Column(
                                         horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier.fillMaxSize()
+                                        modifier = Modifier.fillMaxSize().statusBarsPadding()
                                     ) {
                                         Column(
                                             horizontalAlignment = Alignment.CenterHorizontally,
