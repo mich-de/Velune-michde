@@ -128,6 +128,19 @@ fun AboutScreen(
                             fontWeight = FontWeight.SemiBold
                         )
                     }
+
+                    Spacer(Modifier.height(12.dp))
+
+                    Text(
+                        text = "Doped v${BuildConfig.VELUNE_DOPED_VERSION}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    )
+                    Text(
+                        text = "Base Velune v${BuildConfig.VELUNE_BASE_VERSION}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                    )
                 }
 
                 Spacer(Modifier.height(24.dp))

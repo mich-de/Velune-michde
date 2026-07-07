@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import com.nikhil.yt.LocalPlayerAwareWindowInsets
@@ -45,6 +46,15 @@ import com.nikhil.yt.constants.DeezerArlKey
 import com.nikhil.yt.constants.DeezerQualityKey
 import com.nikhil.yt.constants.EnableDeezerKey
 import com.nikhil.yt.ui.component.ListPreference
+import android.widget.Toast
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import com.nikhil.yt.deezer.Deezer
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -115,6 +125,47 @@ fun IntegrationScreen(
                 onValueSelected = onDeezerQualityChange,
             )
             InfoLabel(text = "Get ARL: login to deezer.com from USA IP → F12 → Application → Cookies → arl → copy value")
+
+            val coroutineScope = rememberCoroutineScope()
+
+            FilledTonalButton(
+                onClick = {
+                    coroutineScope.launch(Dispatchers.IO) {
+                        Deezer.setLogDir(context.cacheDir)
+                        Deezer.setArl(deezerArl)
+                        val result = Deezer.login()
+                        val msg = result.fold(
+                            onSuccess = { "Deezer ARL: valid ✓" },
+                            onFailure = { "Deezer ARL: invalid - ${it.message}" }
+                        )
+                        launch(Dispatchers.Main) {
+                            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+            ) {
+                Text("Test Deezer connection")
+            }
+
+            FilledTonalButton(
+                onClick = {
+                    val tmpDir = context.cacheDir.resolve("deezer_tmp")
+                    if (tmpDir.exists()) {
+                        tmpDir.deleteRecursively()
+                        Toast.makeText(context, "Deezer cache cleared", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "No Deezer cache to clear", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+            ) {
+                Text("Clear Deezer download cache")
+            }
         }
 
         PreferenceGroupTitle(

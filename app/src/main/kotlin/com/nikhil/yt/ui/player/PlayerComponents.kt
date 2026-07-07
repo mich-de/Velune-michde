@@ -8,6 +8,7 @@
 
 package com.nikhil.yt.ui.player
 
+import com.nikhil.yt.ui.component.BigSeekBar
 import com.nikhil.yt.ui.component.VeluneLoader
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -45,6 +46,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import android.content.res.Configuration
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
@@ -67,10 +69,12 @@ import android.provider.MediaStore
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import com.nikhil.yt.constants.DeezerArlKey
 import com.nikhil.yt.constants.DeezerQualityKey
 import com.nikhil.yt.constants.EnableDeezerKey
+import com.nikhil.yt.constants.ShowVUMeterKey
 import com.nikhil.yt.deezer.Deezer
 import com.nikhil.yt.utils.rememberPreference
 import androidx.compose.ui.draw.alpha
@@ -331,6 +335,29 @@ fun DeezerDownloadButton(
 }
 
 @Composable
+fun VuMeterToggleButton(
+    iconButtonColor: Color,
+    textBackgroundColor: Color,
+    size: androidx.compose.ui.unit.Dp = 24.dp
+) {
+    var showVUMeter by rememberPreference(ShowVUMeterKey, false)
+    Box(
+        modifier = Modifier
+            .size(size + 16.dp)
+            .clip(CircleShape)
+            .clickable { showVUMeter = !showVUMeter },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            painter = painterResource(if (showVUMeter) R.drawable.image else R.drawable.tune),
+            contentDescription = "Toggle VU Meter",
+            tint = if (showVUMeter) MaterialTheme.colorScheme.primary else iconButtonColor,
+            modifier = Modifier.size(size)
+        )
+    }
+}
+
+@Composable
 fun PlayerTopActions(
     mediaMetadata: MediaMetadata,
     playerDesignStyle: PlayerDesignStyle,
@@ -363,6 +390,11 @@ fun PlayerTopActions(
             ) {
                 DeezerDownloadButton(
                     mediaMetadata = mediaMetadata,
+                    iconButtonColor = iconButtonColor,
+                    textBackgroundColor = textBackgroundColor,
+                    size = 24.dp
+                )
+                VuMeterToggleButton(
                     iconButtonColor = iconButtonColor,
                     textBackgroundColor = textBackgroundColor,
                     size = 24.dp
@@ -431,6 +463,11 @@ fun PlayerTopActions(
                     textBackgroundColor = textBackgroundColor,
                     size = 20.dp
                 )
+                VuMeterToggleButton(
+                    iconButtonColor = textBackgroundColor.copy(alpha = 0.7f),
+                    textBackgroundColor = textBackgroundColor,
+                    size = 20.dp
+                )
                 Box(
                     modifier = Modifier
                         .size(36.dp)
@@ -484,6 +521,11 @@ fun PlayerTopActions(
             ) {
                 DeezerDownloadButton(
                     mediaMetadata = mediaMetadata,
+                    iconButtonColor = textBackgroundColor,
+                    textBackgroundColor = textBackgroundColor,
+                    size = 22.dp
+                )
+                VuMeterToggleButton(
                     iconButtonColor = textBackgroundColor,
                     textBackgroundColor = textBackgroundColor,
                     size = 22.dp
@@ -580,6 +622,14 @@ fun PlayerTopActions(
         PlayerDesignStyle.V1 -> {
             DeezerDownloadButton(
                 mediaMetadata = mediaMetadata,
+                iconButtonColor = iconButtonColor,
+                textBackgroundColor = textBackgroundColor,
+                size = 24.dp
+            )
+
+            Spacer(modifier = Modifier.size(12.dp))
+
+            VuMeterToggleButton(
                 iconButtonColor = iconButtonColor,
                 textBackgroundColor = textBackgroundColor,
                 size = 24.dp
@@ -834,6 +884,10 @@ fun PlayerPlaybackControls(
 ) {
     val shuffleModeEnabled by playerConnection.shuffleModeEnabled.collectAsState()
 
+    val orientation = LocalConfiguration.current.orientation
+    val isLandscape = orientation == Configuration.ORIENTATION_LANDSCAPE
+    val ls = if (isLandscape) 1.3f else 1f
+
     when (playerDesignStyle) {
         PlayerDesignStyle.V2 -> {
             BoxWithConstraints(
@@ -946,7 +1000,7 @@ fun PlayerPlaybackControls(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
+                            .size((40.dp * ls).coerceAtLeast(40.dp))
                             .clip(RoundedCornerShape(10.dp))
                             .semantics {
                                 role = Role.Button
@@ -970,7 +1024,7 @@ fun PlayerPlaybackControls(
 
                     Box(
                         modifier = Modifier
-                            .size(52.dp)
+                            .size((52.dp * ls).coerceAtLeast(52.dp))
                             .clip(RoundedCornerShape(14.dp))
                             .background(textBackgroundColor.copy(alpha = 0.08f))
                             .clickable(enabled = canSkipPrevious) {
@@ -988,7 +1042,7 @@ fun PlayerPlaybackControls(
 
                     Box(
                         modifier = Modifier
-                            .size(70.dp)
+                            .size((70.dp * ls).coerceAtLeast(70.dp))
                             .clip(RoundedCornerShape(50))
                             .background(textBackgroundColor)
                             .clickable {
@@ -1025,7 +1079,7 @@ fun PlayerPlaybackControls(
 
                     Box(
                         modifier = Modifier
-                            .size(52.dp)
+                            .size((52.dp * ls).coerceAtLeast(52.dp))
                             .clip(RoundedCornerShape(14.dp))
                             .background(textBackgroundColor.copy(alpha = 0.08f))
                             .clickable(enabled = canSkipNext) {
@@ -1043,7 +1097,7 @@ fun PlayerPlaybackControls(
 
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
+                            .size((40.dp * ls).coerceAtLeast(40.dp))
                             .clip(RoundedCornerShape(10.dp))
                             .semantics {
                                 role = Role.Button
@@ -1307,7 +1361,7 @@ fun PlayerPlaybackControls(
                         contentDescription = "Toggle repeat",
                         color = textBackgroundColor,
                         modifier = Modifier
-                            .size(32.dp)
+                            .size((32.dp * ls).coerceAtLeast(32.dp))
                             .padding(4.dp)
                             .align(Alignment.Center)
                             .alpha(if (repeatMode == Player.REPEAT_MODE_OFF) 0.5f else 1f),
@@ -1325,18 +1379,18 @@ fun PlayerPlaybackControls(
                         color = textBackgroundColor,
                         modifier =
                         Modifier
-                            .size(32.dp)
+                            .size((32.dp * ls).coerceAtLeast(32.dp))
                             .align(Alignment.Center),
                         onClick = playerConnection::seekToPrevious,
                     )
                 }
 
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width((8.dp * ls).coerceAtLeast(8.dp)))
 
                 Box(
                     modifier =
                     Modifier
-                        .size(72.dp)
+                        .size((72.dp * ls).coerceAtLeast(72.dp))
                         .clip(RoundedCornerShape(playPauseRoundness))
                         .background(textButtonColor)
                         .clickable {
@@ -1378,7 +1432,7 @@ fun PlayerPlaybackControls(
                     }
                 }
 
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width((8.dp * ls).coerceAtLeast(8.dp)))
 
                 Box(modifier = Modifier.weight(1f)) {
                     ResizableIconButton(
@@ -1388,7 +1442,7 @@ fun PlayerPlaybackControls(
                         color = textBackgroundColor,
                         modifier =
                         Modifier
-                            .size(32.dp)
+                            .size((32.dp * ls).coerceAtLeast(32.dp))
                             .align(Alignment.Center),
                         onClick = playerConnection::seekToNext,
                     )
@@ -1401,7 +1455,7 @@ fun PlayerPlaybackControls(
                         color = if (currentSongLiked) MaterialTheme.colorScheme.error else textBackgroundColor,
                         modifier =
                         Modifier
-                            .size(32.dp)
+                            .size((32.dp * ls).coerceAtLeast(32.dp))
                             .padding(4.dp)
                             .align(Alignment.Center),
                         onClick = playerConnection::toggleLike,
@@ -1531,6 +1585,41 @@ fun PlayerControlsContent(
         playerConnection = playerConnection,
         currentSongLiked = currentSongLiked
     )
+
+    Spacer(Modifier.height(16.dp))
+
+    val playerVolume by playerConnection.service.playerVolume.collectAsState()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = PlayerHorizontalPadding),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.volume_off),
+            contentDescription = "Min volume",
+            modifier = Modifier.size(18.dp),
+            tint = textBackgroundColor.copy(alpha = 0.6f)
+        )
+
+        BigSeekBar(
+            progressProvider = { playerVolume },
+            onProgressChange = { playerConnection.service.playerVolume.value = it },
+            color = textBackgroundColor,
+            modifier = Modifier
+                .weight(1f)
+                .height(24.dp)
+                .padding(horizontal = 12.dp)
+        )
+
+        Icon(
+            painter = painterResource(R.drawable.volume_up),
+            contentDescription = "Max volume",
+            modifier = Modifier.size(18.dp),
+            tint = textBackgroundColor.copy(alpha = 0.6f)
+        )
+    }
 }
 @Composable
 fun PlayerBackground(

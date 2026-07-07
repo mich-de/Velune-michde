@@ -14,6 +14,8 @@ import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -89,6 +91,7 @@ import com.nikhil.yt.constants.DisableBlurKey
 import com.nikhil.yt.constants.PlayerBackgroundStyle
 import com.nikhil.yt.constants.PlayerBackgroundStyleKey
 import com.nikhil.yt.constants.PlayerButtonsStyle
+import com.nikhil.yt.constants.ShowVUMeterKey
 import com.nikhil.yt.constants.PlayerButtonsStyleKey
 import com.nikhil.yt.constants.PlayerCustomBlurKey
 import com.nikhil.yt.constants.PlayerCustomBrightnessKey
@@ -104,7 +107,9 @@ import com.nikhil.yt.extensions.metadata
 import com.nikhil.yt.extensions.togglePlayPause
 import com.nikhil.yt.innertube.toHighResThumbnail
 import com.nikhil.yt.models.MediaMetadata
+import com.nikhil.yt.ui.component.BigSeekBar
 import com.nikhil.yt.ui.component.BottomSheet
+import com.nikhil.yt.ui.component.VuMeter
 import com.nikhil.yt.ui.component.BottomSheetState
 import com.nikhil.yt.ui.component.LocalBottomSheetPageState
 import com.nikhil.yt.ui.component.LocalMenuState
@@ -214,7 +219,8 @@ fun BottomSheetPlayer(
     val currentSongLiked = currentSong?.song?.liked == true
     val queueWindows by playerConnection.queueWindows.collectAsState()
     val currentWindowIndex by playerConnection.currentWindowIndex.collectAsState()
-    playerConnection.service.playerVolume.collectAsState()
+
+    var showVUMeter by rememberPreference(ShowVUMeterKey, false)
 
     val automix by playerConnection.service.automixItems.collectAsState()
     val repeatMode by playerConnection.repeatMode.collectAsState()
@@ -662,11 +668,54 @@ fun BottomSheetPlayer(
                         ) {
                             val screenWidth = LocalConfiguration.current.screenWidthDp
                             val thumbnailSize = (screenWidth * 0.4).dp
-                            Thumbnail(
-                                sliderPositionProvider = { sliderPosition },
-                                modifier = Modifier.size(thumbnailSize),
-                                isPlayerExpanded = state.isExpanded
-                            )
+                            if (showVUMeter) {
+                                Box(modifier = Modifier.size(thumbnailSize)) {
+                                    VuMeter(
+                                        modifier = Modifier.fillMaxSize(),
+                                        isPlayerExpanded = state.isExpanded
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .size(28.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.Black.copy(alpha = 0.4f))
+                                            .clickable { showVUMeter = false },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.image),
+                                            contentDescription = "Show artwork",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            } else {
+                                Box(modifier = Modifier.size(thumbnailSize)) {
+                                    Thumbnail(
+                                        sliderPositionProvider = { sliderPosition },
+                                        modifier = Modifier.fillMaxSize(),
+                                        isPlayerExpanded = state.isExpanded
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .size(28.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.Black.copy(alpha = 0.4f))
+                                            .clickable { showVUMeter = true },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.tune),
+                                            contentDescription = "Show VU meter",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
                         }
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -735,11 +784,58 @@ fun BottomSheetPlayer(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier.weight(1f),
                         ) {
-                            Thumbnail(
-                                sliderPositionProvider = { sliderPosition },
-                                modifier = Modifier.nestedScroll(state.preUpPostDownNestedScrollConnection),
-                                isPlayerExpanded = state.isExpanded
-                            )
+                            if (showVUMeter) {
+                                Box(
+                                    modifier = Modifier.nestedScroll(state.preUpPostDownNestedScrollConnection)
+                                ) {
+                                    VuMeter(
+                                        modifier = Modifier.fillMaxSize(),
+                                        isPlayerExpanded = state.isExpanded
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .size(28.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.Black.copy(alpha = 0.4f))
+                                            .clickable { showVUMeter = false },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.image),
+                                            contentDescription = "Show artwork",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            } else {
+                                Box(
+                                    modifier = Modifier.nestedScroll(state.preUpPostDownNestedScrollConnection)
+                                ) {
+                                    Thumbnail(
+                                        sliderPositionProvider = { sliderPosition },
+                                        modifier = Modifier.fillMaxSize(),
+                                        isPlayerExpanded = state.isExpanded
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .size(28.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.Black.copy(alpha = 0.4f))
+                                            .clickable { showVUMeter = true },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.tune),
+                                            contentDescription = "Show VU meter",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
                         }
 
                         enrichedMetadata?.let {
@@ -1082,7 +1178,42 @@ private fun MetroPlayerContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(72.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            val playerVolume by playerConnection.service.playerVolume.collectAsState()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.volume_off),
+                    contentDescription = "Min volume",
+                    modifier = Modifier.size(18.dp),
+                    tint = textColor.copy(alpha = 0.6f)
+                )
+
+                BigSeekBar(
+                    progressProvider = { playerVolume },
+                    onProgressChange = { playerConnection.service.playerVolume.value = it },
+                    color = textColor,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(24.dp)
+                        .padding(horizontal = 12.dp)
+                )
+
+                Icon(
+                    painter = painterResource(R.drawable.volume_up),
+                    contentDescription = "Max volume",
+                    modifier = Modifier.size(18.dp),
+                    tint = textColor.copy(alpha = 0.6f)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(36.dp))
         }
     }
 }

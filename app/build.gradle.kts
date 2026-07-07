@@ -23,8 +23,8 @@ android {
     applicationId = "com.nikhil.yt"
         minSdk = 26
         targetSdk = 36
-        versionCode = 10
-        versionName = "1.1.2 "
+        versionCode = 11
+        versionName = "1.1.3 "
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -45,6 +45,8 @@ android {
                 ?: System.getenv("TOGETHER_BEARER_TOKEN")
                 ?: ""
         buildConfigField("String", "TOGETHER_BEARER_TOKEN", "\"$togetherBearerToken\"")
+        buildConfigField("String", "VELUNE_BASE_VERSION", "\"1.1.2\"")
+        buildConfigField("String", "VELUNE_DOPED_VERSION", "\"1.1.3\"")
     }
 
     flavorDimensions += "abi"

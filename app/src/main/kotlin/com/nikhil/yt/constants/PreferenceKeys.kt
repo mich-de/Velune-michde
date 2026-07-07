@@ -442,6 +442,7 @@ val PreloadQueueLyricsEnabledKey = booleanPreferencesKey("preload_queue_lyrics_e
 val QueueLyricsPreloadCountKey = intPreferencesKey("queue_lyrics_preload_count")
 
 val PlayerVolumeKey = floatPreferencesKey("playerVolume")
+val ShowVUMeterKey = booleanPreferencesKey("showVUMeter")
 val RepeatModeKey = intPreferencesKey("repeatMode")
 
 val SearchSourceKey = stringPreferencesKey("searchSource")
