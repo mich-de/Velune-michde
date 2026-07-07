@@ -220,6 +220,7 @@ fun BottomSheetPlayer(
     val currentSongLiked = currentSong?.song?.liked == true
     val queueWindows by playerConnection.queueWindows.collectAsState()
     val currentWindowIndex by playerConnection.currentWindowIndex.collectAsState()
+    val queueTitle by playerConnection.queueTitle.collectAsState()
 
     var showVUMeter by rememberPreference(ShowVUMeterKey, false)
 
@@ -840,6 +841,30 @@ fun BottomSheetPlayer(
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         modifier = Modifier.fillMaxSize()
                                     ) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp)
+                                        ) {
+                                            Text(
+                                                text = stringResource(R.string.now_playing),
+                                                style = MaterialTheme.typography.titleMedium,
+                                                color = TextBackgroundColor
+                                            )
+                                            val currentMetadata = enrichedMetadata ?: mediaMetadata
+                                            val playingFrom = queueTitle ?: currentMetadata?.album?.title
+                                            if (!playingFrom.isNullOrBlank()) {
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = playingFrom,
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    color = TextBackgroundColor.copy(alpha = 0.8f),
+                                                    maxLines = 1,
+                                                    modifier = Modifier.basicMarquee(),
+                                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                                )
+                                            }
+                                        }
+
                                         Box(
                                             modifier = Modifier.weight(1f),
                                             contentAlignment = Alignment.Center
