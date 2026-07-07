@@ -605,6 +605,7 @@ fun BottomSheetPlayer(
                 context = context,
                 onSliderValueChange = onSliderValueChange,
                 onSliderValueChangeFinished = onSliderValueChangeFinished,
+                showVUMeter = showVUMeter
             )
         }
 
@@ -704,19 +705,13 @@ fun BottomSheetPlayer(
                                         Spacer(modifier = Modifier.height(8.dp))
                                         val currentMetadata = enrichedMetadata ?: mediaMetadata
                                         currentMetadata?.let { metadata ->
-                                            Text(
-                                                text = metadata.title ?: "",
-                                                style = MaterialTheme.typography.titleMedium.copy(
-                                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                                    fontSize = 18.sp
-                                                ),
-                                                color = MaterialTheme.colorScheme.onBackground,
-                                                maxLines = 1,
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(horizontal = 8.dp)
-                                                    .basicMarquee(),
-                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                            PlayerTitleSection(
+                                                mediaMetadata = metadata,
+                                                textBackgroundColor = TextBackgroundColor,
+                                                navController = navController,
+                                                state = state,
+                                                clipboardManager = clipboardManager,
+                                                context = context
                                             )
                                         }
                                     }
@@ -851,34 +846,20 @@ fun BottomSheetPlayer(
                                         Spacer(modifier = Modifier.height(16.dp))
                                         val currentMetadata = enrichedMetadata ?: mediaMetadata
                                         currentMetadata?.let { metadata ->
-                                            Text(
-                                                text = metadata.title ?: "",
-                                                style = MaterialTheme.typography.titleLarge.copy(
-                                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                                    fontSize = 24.sp
-                                                ),
-                                                color = MaterialTheme.colorScheme.onBackground,
-                                                maxLines = 1,
+                                            Box(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .padding(horizontal = 24.dp)
-                                                    .basicMarquee(),
-                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                            )
-                                            Spacer(modifier = Modifier.height(4.dp))
-                                            Text(
-                                                text = metadata.artists.joinToString { it.name },
-                                                style = MaterialTheme.typography.bodyMedium.copy(
-                                                    fontSize = 16.sp
-                                                ),
-                                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                                                maxLines = 1,
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(horizontal = 24.dp),
-                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                            )
+                                                    .padding(horizontal = com.nikhil.yt.constants.PlayerHorizontalPadding)
+                                            ) {
+                                                PlayerTitleSection(
+                                                    mediaMetadata = metadata,
+                                                    textBackgroundColor = TextBackgroundColor,
+                                                    navController = navController,
+                                                    state = state,
+                                                    clipboardManager = clipboardManager,
+                                                    context = context
+                                                )
+                                            }
                                         }
                                         Spacer(modifier = Modifier.height(12.dp))
                                     }

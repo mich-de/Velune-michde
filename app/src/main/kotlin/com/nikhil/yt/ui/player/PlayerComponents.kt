@@ -1498,7 +1498,8 @@ fun PlayerControlsContent(
     clipboardManager: ClipboardManager,
     context: Context,
     onSliderValueChange: (Long) -> Unit,
-    onSliderValueChangeFinished: () -> Unit
+    onSliderValueChangeFinished: () -> Unit,
+    showVUMeter: Boolean = false
 ) {
     val currentSong by playerConnection.currentSong.collectAsState(initial = null)
     val currentSongLiked = currentSong?.song?.liked == true
@@ -1516,18 +1517,20 @@ fun PlayerControlsContent(
             .fillMaxWidth()
             .padding(horizontal = PlayerHorizontalPadding),
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            PlayerTitleSection(
-                mediaMetadata = mediaMetadata,
-                textBackgroundColor = textBackgroundColor,
-                navController = navController,
-                state = state,
-                clipboardManager = clipboardManager,
-                context = context
-            )
-        }
+        if (!showVUMeter) {
+            Column(modifier = Modifier.weight(1f)) {
+                PlayerTitleSection(
+                    mediaMetadata = mediaMetadata,
+                    textBackgroundColor = textBackgroundColor,
+                    navController = navController,
+                    state = state,
+                    clipboardManager = clipboardManager,
+                    context = context
+                )
+            }
 
-        Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(12.dp))
+        }
 
         PlayerTopActions(
             mediaMetadata = mediaMetadata,
