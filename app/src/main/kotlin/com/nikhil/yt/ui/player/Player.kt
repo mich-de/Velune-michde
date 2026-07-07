@@ -72,6 +72,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.media3.common.C
@@ -670,25 +671,54 @@ fun BottomSheetPlayer(
                             val thumbnailSize = (screenWidth * 0.4).dp
                             if (showVUMeter) {
                                 Box(modifier = Modifier.size(thumbnailSize)) {
-                                    VuMeter(
-                                        modifier = Modifier.fillMaxSize(),
-                                        isPlayerExpanded = state.isExpanded
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .align(Alignment.TopEnd)
-                                            .size(28.dp)
-                                            .clip(CircleShape)
-                                            .background(Color.Black.copy(alpha = 0.4f))
-                                            .clickable { showVUMeter = false },
-                                        contentAlignment = Alignment.Center
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.fillMaxSize()
                                     ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.image),
-                                            contentDescription = "Show artwork",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(16.dp)
-                                        )
+                                        Box(
+                                            modifier = Modifier.weight(1f),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            VuMeter(
+                                                modifier = Modifier.fillMaxSize(),
+                                                isPlayerExpanded = state.isExpanded
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .align(Alignment.TopEnd)
+                                                    .padding(4.dp)
+                                                    .size(28.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color.Black.copy(alpha = 0.4f))
+                                                    .clickable { showVUMeter = false },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.image),
+                                                    contentDescription = "Show artwork",
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        val currentMetadata = enrichedMetadata ?: mediaMetadata
+                                        currentMetadata?.let { metadata ->
+                                            Text(
+                                                text = metadata.title ?: "",
+                                                style = MaterialTheme.typography.titleMedium.copy(
+                                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                                    fontSize = 18.sp
+                                                ),
+                                                color = MaterialTheme.colorScheme.onBackground,
+                                                maxLines = 1,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 8.dp)
+                                                    .basicMarquee(),
+                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                            )
+                                        }
                                     }
                                 }
                             } else {
@@ -788,25 +818,69 @@ fun BottomSheetPlayer(
                                 Box(
                                     modifier = Modifier.nestedScroll(state.preUpPostDownNestedScrollConnection)
                                 ) {
-                                    VuMeter(
-                                        modifier = Modifier.fillMaxSize(),
-                                        isPlayerExpanded = state.isExpanded
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .align(Alignment.TopEnd)
-                                            .size(28.dp)
-                                            .clip(CircleShape)
-                                            .background(Color.Black.copy(alpha = 0.4f))
-                                            .clickable { showVUMeter = false },
-                                        contentAlignment = Alignment.Center
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.fillMaxSize()
                                     ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.image),
-                                            contentDescription = "Show artwork",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(16.dp)
-                                        )
+                                        Box(
+                                            modifier = Modifier.weight(1f),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            VuMeter(
+                                                modifier = Modifier.fillMaxSize(),
+                                                isPlayerExpanded = state.isExpanded
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .align(Alignment.TopEnd)
+                                                    .padding(8.dp)
+                                                    .size(28.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color.Black.copy(alpha = 0.4f))
+                                                    .clickable { showVUMeter = false },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.image),
+                                                    contentDescription = "Show artwork",
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        val currentMetadata = enrichedMetadata ?: mediaMetadata
+                                        currentMetadata?.let { metadata ->
+                                            Text(
+                                                text = metadata.title ?: "",
+                                                style = MaterialTheme.typography.titleLarge.copy(
+                                                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                                    fontSize = 24.sp
+                                                ),
+                                                color = MaterialTheme.colorScheme.onBackground,
+                                                maxLines = 1,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 24.dp)
+                                                    .basicMarquee(),
+                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = metadata.artists.joinToString { it.name },
+                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                    fontSize = 16.sp
+                                                ),
+                                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                                                maxLines = 1,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 24.dp),
+                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(12.dp))
                                     }
                                 }
                             } else {

@@ -101,18 +101,18 @@ private fun DrawScope.drawVintageNeedles(
     val w = size.width
     val h = size.height
     
-    // Pivot at bottom center (90% of height)
+    // Pivot at bottom center of the black dial face (58% of height)
     val cx = w / 2f
-    val cy = h * 0.9f
-    val needleLen = h * 0.75f
+    val cy = h * 0.58f
+    val needleLen = h * 0.44f
     
-    // Matte Red (Left) and Matte Blue (Right) vintage needles
-    val leftNeedleColor = Color(0xFFE53935)
-    val rightNeedleColor = Color(0xFF1E88E5)
+    // Glowing amber-yellow (Left) and orange-red (Right) needles matching the TEAC dial
+    val leftNeedleColor = Color(0xFFFFB300)
+    val rightNeedleColor = Color(0xFFFF3D00)
     
-    // Sweep from left (-145 deg) to right (-35 deg)
-    val startAngle = -145f
-    val sweepAngle = 110f
+    // Sweep from left (-142 deg) to right (-38 deg)
+    val startAngle = -142f
+    val sweepAngle = 104f
     
     fun drawNeedle(level: Float, color: Color) {
         val clamped = level.coerceIn(0f, 1f)
@@ -123,10 +123,10 @@ private fun DrawScope.drawVintageNeedles(
         
         // Shadow for depth
         drawLine(
-            color = Color.Black.copy(alpha = 0.25f),
-            start = Offset(cx + 5f, cy + 5f),
-            end = Offset(tipX + 5f, tipY + 5f),
-            strokeWidth = 5f,
+            color = Color.Black.copy(alpha = 0.4f),
+            start = Offset(cx + 4f, cy + 4f),
+            end = Offset(tipX + 4f, tipY + 4f),
+            strokeWidth = 4f,
             cap = StrokeCap.Round
         )
         
@@ -135,7 +135,7 @@ private fun DrawScope.drawVintageNeedles(
             color = color,
             start = Offset(cx, cy),
             end = Offset(tipX, tipY),
-            strokeWidth = 4.5f,
+            strokeWidth = 3.5f,
             cap = StrokeCap.Round
         )
     }
@@ -143,7 +143,10 @@ private fun DrawScope.drawVintageNeedles(
     drawNeedle(leftLevel, leftNeedleColor)
     drawNeedle(rightLevel, rightNeedleColor)
     
-    // Pivot cap covering the needle base
-    drawCircle(Color(0xFF1A1A1A), radius = w * 0.065f, center = Offset(cx, cy))
-    drawCircle(Color(0xFF333333), radius = w * 0.03f, center = Offset(cx, cy))
+    // Glowing light bulb center
+    drawCircle(
+        color = Color(0xFFFFB300).copy(alpha = 0.25f),
+        radius = w * 0.04f,
+        center = Offset(cx, cy)
+    )
 }
