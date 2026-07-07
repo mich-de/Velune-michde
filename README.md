@@ -1,7 +1,7 @@
 
 <div align="center">
 
- <img src="https://raw.githubusercontent.com/mich-de/velune-doped/main/fastlane/metadata/android/en-US/images/icon.png" width="110" />
+ <img src="https://raw.githubusercontent.com/mich-de/Velune-doped/main/fastlane/metadata/android/en-US/images/icon.png" width="110" />
 
 </div>
 
