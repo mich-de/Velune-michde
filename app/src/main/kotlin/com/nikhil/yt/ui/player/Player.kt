@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -676,57 +677,51 @@ fun BottomSheetPlayer(
                             val screenWidth = LocalConfiguration.current.screenWidthDp
                             val thumbnailSize = (screenWidth * 0.4).dp
                             if (showVUMeter) {
-                                val screenHeight = LocalConfiguration.current.screenHeightDp.dp
-                                val vuHeight = screenHeight * 0.45f
-                                Box(
-                                    modifier = Modifier
-                                        .height(vuHeight)
-                                        .aspectRatio(16f / 9f)
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.fillMaxHeight()
                                 ) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier.fillMaxSize()
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .aspectRatio(16f / 9f),
+                                        contentAlignment = Alignment.Center
                                     ) {
+                                        VuMeter(
+                                            modifier = Modifier.fillMaxSize(),
+                                            isPlayerExpanded = state.isExpanded,
+                                            cornerRadius = thumbnailCornerRadius,
+                                            isWide = true
+                                        )
                                         Box(
-                                            modifier = Modifier.weight(1f),
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(4.dp)
+                                                .size(28.dp)
+                                                .clip(CircleShape)
+                                                .background(Color.Black.copy(alpha = 0.4f))
+                                                .clickable { showVUMeter = false },
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            VuMeter(
-                                                modifier = Modifier.fillMaxSize(),
-                                                isPlayerExpanded = state.isExpanded,
-                                                cornerRadius = thumbnailCornerRadius,
-                                                isWide = true
-                                            )
-                                            Box(
-                                                modifier = Modifier
-                                                    .align(Alignment.TopEnd)
-                                                    .padding(4.dp)
-                                                    .size(28.dp)
-                                                    .clip(CircleShape)
-                                                    .background(Color.Black.copy(alpha = 0.4f))
-                                                    .clickable { showVUMeter = false },
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Icon(
-                                                    painter = painterResource(R.drawable.image),
-                                                    contentDescription = "Show artwork",
-                                                    tint = Color.White,
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                            }
-                                        }
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        val currentMetadata = enrichedMetadata ?: mediaMetadata
-                                        currentMetadata?.let { metadata ->
-                                            PlayerTitleSection(
-                                                mediaMetadata = metadata,
-                                                textBackgroundColor = TextBackgroundColor,
-                                                navController = navController,
-                                                state = state,
-                                                clipboardManager = clipboardManager,
-                                                context = context
+                                            Icon(
+                                                painter = painterResource(R.drawable.image),
+                                                contentDescription = "Show artwork",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(16.dp)
                                             )
                                         }
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    val currentMetadata = enrichedMetadata ?: mediaMetadata
+                                    currentMetadata?.let { metadata ->
+                                        PlayerTitleSection(
+                                            mediaMetadata = metadata,
+                                            textBackgroundColor = TextBackgroundColor,
+                                            navController = navController,
+                                            state = state,
+                                            clipboardManager = clipboardManager,
+                                            context = context
+                                        )
                                     }
                                 }
                             } else {
