@@ -1,7 +1,5 @@
 package com.nikhil.yt.ui.component
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -10,8 +8,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,6 +25,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.nikhil.yt.LocalPlayerConnection
+import kotlinx.coroutines.delay
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -32,20 +35,40 @@ fun VuMeter(
     isPlayerExpanded: Boolean = true,
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
-    val playerVolume by playerConnection.service.playerVolume.collectAsState()
+    val service = playerConnection.service
+    val isPlaying by playerConnection.isPlaying.collectAsState()
 
-    val targetLevel = if (isPlayerExpanded) playerVolume else 0f
-    val animatedLevel by animateFloatAsState(
-        targetValue = targetLevel,
-        animationSpec = spring(
-            dampingRatio = 0.3f,
-            stiffness = 100f,
-        ),
-        label = "vuLevel",
-    )
+    var leftLevel by remember { mutableStateOf(0f) }
+    var rightLevel by remember { mutableStateOf(0f) }
 
-    val leftLevel = animatedLevel.coerceIn(0f, 1f)
-    val rightLevel = (animatedLevel * 0.95f + 0.05f).coerceIn(0f, 1f)
+    LaunchedEffect(isPlaying, isPlayerExpanded) {
+        if (isPlaying && isPlayerExpanded) {
+            while (true) {
+                // Poll the amplitude values from our custom audio processor
+                val rawL = service.amplitudeProcessor.latestAmplitudeL
+                val rawR = service.amplitudeProcessor.latestAmplitudeR
+
+                // Scale it by the current player volume (which is 0f to 1f)
+                val currentVol = service.player.volume
+                
+                // Add a small random jitter to make it feel organic and warm
+                val jitterL = if (rawL > 0.05f) (Math.random().toFloat() - 0.5f) * 0.02f else 0f
+                val jitterR = if (rawR > 0.05f) (Math.random().toFloat() - 0.5f) * 0.02f else 0f
+
+                leftLevel = (rawL * currentVol + jitterL).coerceIn(0f, 1f)
+                rightLevel = (rawR * currentVol + jitterR).coerceIn(0f, 1f)
+
+                delay(16) // ~60 FPS polling rate
+            }
+        } else {
+            // Decay to zero when paused
+            while (leftLevel > 0f || rightLevel > 0f) {
+                leftLevel = (leftLevel * 0.8f - 0.02f).coerceIn(0f, 1f)
+                rightLevel = (rightLevel * 0.8f - 0.02f).coerceIn(0f, 1f)
+                delay(16)
+            }
+        }
+    }
 
     Box(
         modifier = modifier
@@ -64,7 +87,7 @@ fun VuMeter(
             drawVintageNeedles(
                 leftLevel = leftLevel,
                 rightLevel = rightLevel,
-                isActive = isPlayerExpanded,
+                isActive = isPlayerExpanded && isPlaying,
             )
         }
     }
@@ -83,9 +106,9 @@ private fun DrawScope.drawVintageNeedles(
     val cy = h * 0.9f
     val needleLen = h * 0.75f
     
-    // Warm-colored vintage needles (classic orange-red and yellow-orange or black/red)
-    val leftNeedleColor = Color(0xFFE53935)  // Matte Red
-    val rightNeedleColor = Color(0xFF1E88E5) // Matte Blue
+    // Matte Red (Left) and Matte Blue (Right) vintage needles
+    val leftNeedleColor = Color(0xFFE53935)
+    val rightNeedleColor = Color(0xFF1E88E5)
     
     // Sweep from left (-145 deg) to right (-35 deg)
     val startAngle = -145f
@@ -98,23 +121,21 @@ private fun DrawScope.drawVintageNeedles(
         val tipX = cx + (needleLen * cos(angleRad)).toFloat()
         val tipY = cy + (needleLen * sin(angleRad)).toFloat()
         
-        // Shadow (subtle black offset line for 3D depth)
-        if (isActive) {
-            drawLine(
-                color = Color.Black.copy(alpha = 0.3f),
-                start = Offset(cx + 4f, cy + 4f),
-                end = Offset(tipX + 4f, tipY + 4f),
-                strokeWidth = 5f,
-                cap = StrokeCap.Round
-            )
-        }
-        
-        // Main Needle Line
+        // Shadow for depth
         drawLine(
-            color = if (isActive) color else color.copy(alpha = 0.4f),
+            color = Color.Black.copy(alpha = 0.25f),
+            start = Offset(cx + 5f, cy + 5f),
+            end = Offset(tipX + 5f, tipY + 5f),
+            strokeWidth = 5f,
+            cap = StrokeCap.Round
+        )
+        
+        // Main needle line
+        drawLine(
+            color = color,
             start = Offset(cx, cy),
             end = Offset(tipX, tipY),
-            strokeWidth = 4f,
+            strokeWidth = 4.5f,
             cap = StrokeCap.Round
         )
     }
@@ -122,7 +143,7 @@ private fun DrawScope.drawVintageNeedles(
     drawNeedle(leftLevel, leftNeedleColor)
     drawNeedle(rightLevel, rightNeedleColor)
     
-    // Pivot cap
-    drawCircle(Color(0xFF222222), radius = w * 0.06f, center = Offset(cx, cy))
-    drawCircle(Color(0xFF444444), radius = w * 0.03f, center = Offset(cx, cy))
+    // Pivot cap covering the needle base
+    drawCircle(Color(0xFF1A1A1A), radius = w * 0.065f, center = Offset(cx, cy))
+    drawCircle(Color(0xFF333333), radius = w * 0.03f, center = Offset(cx, cy))
 }

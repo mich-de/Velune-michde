@@ -355,6 +355,7 @@ class MusicService :
     lateinit var downloadCache: Cache
 
     lateinit var player: ExoPlayer
+    val amplitudeProcessor = AmplitudeAudioProcessor()
     private lateinit var mediaSession: MediaLibrarySession
 
     private var isAudioEffectSessionOpened = false
@@ -4293,6 +4294,7 @@ class MusicService :
                             150.toShort(),
                         ),
                         SonicAudioProcessor(),
+                        amplitudeProcessor,
                     ),
                 ).build()
         }
