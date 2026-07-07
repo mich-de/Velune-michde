@@ -34,6 +34,7 @@ fun VuMeter(
     modifier: Modifier = Modifier,
     isPlayerExpanded: Boolean = true,
     cornerRadius: Float = 16f,
+    isWide: Boolean = false,
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val service = playerConnection.service
@@ -77,17 +78,38 @@ fun VuMeter(
         contentAlignment = Alignment.Center,
     ) {
         Image(
-            painter = painterResource(com.nikhil.yt.R.drawable.vu_meter_bg),
+            painter = painterResource(
+                if (isWide) com.nikhil.yt.R.drawable.vu_meter_wide_bg
+                else com.nikhil.yt.R.drawable.vu_meter_bg
+            ),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
 
         Canvas(modifier = Modifier.fillMaxSize().padding(12.dp)) {
+            // Real-time transient beat-synchronized ambery radial light glow
+            val timeSinceBeat = System.currentTimeMillis() - service.amplitudeProcessor.lastBeatTime
+            val lightIntensity = (1f - (timeSinceBeat.toFloat() / 300f)).coerceIn(0.2f, 1.0f)
+            val glowColor = Color(0xFFFF9800).copy(alpha = 0.55f * lightIntensity)
+            val glowRadius = size.height * (if (isWide) 0.8f else 0.5f)
+            val centerGlow = Offset(size.width / 2f, size.height * (if (isWide) 0.95f else 0.58f))
+
+            drawCircle(
+                brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                    colors = listOf(glowColor, Color.Transparent),
+                    center = centerGlow,
+                    radius = glowRadius
+                ),
+                radius = glowRadius,
+                center = centerGlow
+            )
+
             drawVintageNeedles(
                 leftLevel = leftLevel,
                 rightLevel = rightLevel,
                 isActive = isPlayerExpanded && isPlaying,
+                isWide = isWide
             )
         }
     }
@@ -97,14 +119,15 @@ private fun DrawScope.drawVintageNeedles(
     leftLevel: Float,
     rightLevel: Float,
     isActive: Boolean,
+    isWide: Boolean,
 ) {
     val w = size.width
     val h = size.height
     
-    // Pivot at bottom center of the black dial face (58% of height)
+    // Pivot at bottom center of the black dial face (95% for wide, 58% for square)
     val cx = w / 2f
-    val cy = h * 0.58f
-    val needleLen = h * 0.44f
+    val cy = h * (if (isWide) 0.95f else 0.58f)
+    val needleLen = h * (if (isWide) 0.78f else 0.44f)
     
     // Glowing amber-yellow (Left) and orange-red (Right) needles matching the TEAC dial
     val leftNeedleColor = Color(0xFFFFB300)

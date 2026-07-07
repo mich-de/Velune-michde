@@ -676,7 +676,13 @@ fun BottomSheetPlayer(
                             val screenWidth = LocalConfiguration.current.screenWidthDp
                             val thumbnailSize = (screenWidth * 0.4).dp
                             if (showVUMeter) {
-                                Box(modifier = Modifier.size(thumbnailSize)) {
+                                val screenHeight = LocalConfiguration.current.screenHeightDp.dp
+                                val vuHeight = screenHeight * 0.45f
+                                Box(
+                                    modifier = Modifier
+                                        .height(vuHeight)
+                                        .aspectRatio(16f / 9f)
+                                ) {
                                     Column(
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         modifier = Modifier.fillMaxSize()
@@ -687,7 +693,9 @@ fun BottomSheetPlayer(
                                         ) {
                                             VuMeter(
                                                 modifier = Modifier.fillMaxSize(),
-                                                isPlayerExpanded = state.isExpanded
+                                                isPlayerExpanded = state.isExpanded,
+                                                cornerRadius = thumbnailCornerRadius,
+                                                isWide = true
                                             )
                                             Box(
                                                 modifier = Modifier

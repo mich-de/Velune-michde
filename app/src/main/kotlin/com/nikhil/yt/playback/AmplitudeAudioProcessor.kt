@@ -8,6 +8,8 @@ import kotlin.math.abs
 class AmplitudeAudioProcessor : BaseAudioProcessor() {
     @Volatile var latestAmplitudeL = 0f
     @Volatile var latestAmplitudeR = 0f
+    @Volatile var lastBeatTime = 0L
+    private var runningAverageEnergy = 0.1f
 
     override fun onConfigure(inputAudioFormat: AudioProcessor.AudioFormat): AudioProcessor.AudioFormat {
         // We support any PCM input and return it unmodified
@@ -64,6 +66,14 @@ class AmplitudeAudioProcessor : BaseAudioProcessor() {
                 latestAmplitudeR * (1f - rise) + maxR * rise
             } else {
                 latestAmplitudeR * decay + maxR * (1f - decay)
+            }
+
+            // Real-time transient beat detection
+            val energy = (maxL + maxR) / 2f
+            runningAverageEnergy = runningAverageEnergy * 0.98f + energy * 0.02f
+            val now = System.currentTimeMillis()
+            if (energy > 0.08f && energy > runningAverageEnergy * 1.35f && (now - lastBeatTime > 250)) {
+                lastBeatTime = now
             }
         }
         
