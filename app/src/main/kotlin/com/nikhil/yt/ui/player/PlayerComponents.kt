@@ -256,7 +256,10 @@ fun DeezerDownloadButton(
     mediaMetadata: MediaMetadata,
     iconButtonColor: Color,
     textBackgroundColor: Color,
-    size: androidx.compose.ui.unit.Dp = 24.dp
+    size: androidx.compose.ui.unit.Dp = 24.dp,
+    backgroundColor: Color? = null,
+    containerSize: androidx.compose.ui.unit.Dp? = null,
+    shape: androidx.compose.ui.graphics.Shape = CircleShape
 ) {
     val context = LocalContext.current
     val (enableDeezerPref) = rememberPreference(EnableDeezerKey, false)
@@ -269,8 +272,9 @@ fun DeezerDownloadButton(
 
     Box(
         modifier = Modifier
-            .size(size + 12.dp)
-            .clip(CircleShape)
+            .size(containerSize ?: (size + 12.dp))
+            .clip(shape)
+            .then(if (backgroundColor != null) Modifier.background(backgroundColor) else Modifier)
             .clickable(enabled = !isDownloading) {
                 if (deezerArl.isBlank()) {
                     Toast.makeText(context, "Deezer: enter ARL in Settings → Integrations", Toast.LENGTH_LONG).show()
@@ -338,13 +342,17 @@ fun DeezerDownloadButton(
 fun VuMeterToggleButton(
     iconButtonColor: Color,
     textBackgroundColor: Color,
-    size: androidx.compose.ui.unit.Dp = 24.dp
+    size: androidx.compose.ui.unit.Dp = 24.dp,
+    backgroundColor: Color? = null,
+    containerSize: androidx.compose.ui.unit.Dp? = null,
+    shape: androidx.compose.ui.graphics.Shape = CircleShape
 ) {
     var showVUMeter by rememberPreference(ShowVUMeterKey, false)
     Box(
         modifier = Modifier
-            .size(size + 16.dp)
-            .clip(CircleShape)
+            .size(containerSize ?: (size + 16.dp))
+            .clip(shape)
+            .then(if (backgroundColor != null) Modifier.background(backgroundColor) else Modifier)
             .clickable { showVUMeter = !showVUMeter },
         contentAlignment = Alignment.Center
     ) {
@@ -392,12 +400,18 @@ fun PlayerTopActions(
                     mediaMetadata = mediaMetadata,
                     iconButtonColor = iconButtonColor,
                     textBackgroundColor = textBackgroundColor,
-                    size = 24.dp
+                    size = 24.dp,
+                    backgroundColor = textButtonColor,
+                    containerSize = 42.dp,
+                    shape = CircleShape
                 )
                 VuMeterToggleButton(
                     iconButtonColor = iconButtonColor,
                     textBackgroundColor = textBackgroundColor,
-                    size = 24.dp
+                    size = 24.dp,
+                    backgroundColor = textButtonColor,
+                    containerSize = 42.dp,
+                    shape = CircleShape
                 )
                 Box(
                     modifier = Modifier
@@ -461,12 +475,16 @@ fun PlayerTopActions(
                     mediaMetadata = mediaMetadata,
                     iconButtonColor = textBackgroundColor.copy(alpha = 0.7f),
                     textBackgroundColor = textBackgroundColor,
-                    size = 20.dp
+                    size = 20.dp,
+                    containerSize = 36.dp,
+                    shape = RoundedCornerShape(12.dp)
                 )
                 VuMeterToggleButton(
                     iconButtonColor = textBackgroundColor.copy(alpha = 0.7f),
                     textBackgroundColor = textBackgroundColor,
-                    size = 20.dp
+                    size = 20.dp,
+                    containerSize = 36.dp,
+                    shape = RoundedCornerShape(12.dp)
                 )
                 Box(
                     modifier = Modifier
@@ -523,12 +541,18 @@ fun PlayerTopActions(
                     mediaMetadata = mediaMetadata,
                     iconButtonColor = textBackgroundColor,
                     textBackgroundColor = textBackgroundColor,
-                    size = 22.dp
+                    size = 22.dp,
+                    backgroundColor = textBackgroundColor.copy(alpha = 0.12f),
+                    containerSize = 44.dp,
+                    shape = RoundedCornerShape(14.dp)
                 )
                 VuMeterToggleButton(
                     iconButtonColor = textBackgroundColor,
                     textBackgroundColor = textBackgroundColor,
-                    size = 22.dp
+                    size = 22.dp,
+                    backgroundColor = textBackgroundColor.copy(alpha = 0.12f),
+                    containerSize = 44.dp,
+                    shape = RoundedCornerShape(14.dp)
                 )
                 Surface(
                     onClick = {
@@ -624,7 +648,10 @@ fun PlayerTopActions(
                 mediaMetadata = mediaMetadata,
                 iconButtonColor = iconButtonColor,
                 textBackgroundColor = textBackgroundColor,
-                size = 24.dp
+                size = 24.dp,
+                backgroundColor = textButtonColor,
+                containerSize = 40.dp,
+                shape = RoundedCornerShape(24.dp)
             )
 
             Spacer(modifier = Modifier.size(12.dp))
@@ -632,7 +659,10 @@ fun PlayerTopActions(
             VuMeterToggleButton(
                 iconButtonColor = iconButtonColor,
                 textBackgroundColor = textBackgroundColor,
-                size = 24.dp
+                size = 24.dp,
+                backgroundColor = textButtonColor,
+                containerSize = 40.dp,
+                shape = RoundedCornerShape(24.dp)
             )
 
             Spacer(modifier = Modifier.size(12.dp))

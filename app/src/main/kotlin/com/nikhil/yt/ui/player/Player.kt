@@ -694,6 +694,12 @@ fun BottomSheetPlayer(
                                             cornerRadius = thumbnailCornerRadius,
                                             isWide = true
                                         )
+                                        if (isLoading) {
+                                            com.nikhil.yt.ui.component.VeluneLoader(
+                                                size = 48.dp,
+                                                modifier = Modifier.align(Alignment.Center)
+                                            )
+                                        }
                                         Box(
                                             modifier = Modifier
                                                 .align(Alignment.TopEnd)
@@ -892,6 +898,12 @@ fun BottomSheetPlayer(
                                                     cornerRadius = thumbnailCornerRadius,
                                                     isWide = true
                                                 )
+                                                if (isLoading) {
+                                                    com.nikhil.yt.ui.component.VeluneLoader(
+                                                        size = 48.dp,
+                                                        modifier = Modifier.align(Alignment.Center)
+                                                    )
+                                                }
                                                 Box(
                                                     modifier = Modifier
                                                         .align(Alignment.TopEnd)
