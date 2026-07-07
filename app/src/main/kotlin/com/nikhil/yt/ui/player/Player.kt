@@ -605,7 +605,7 @@ fun BottomSheetPlayer(
                 context = context,
                 onSliderValueChange = onSliderValueChange,
                 onSliderValueChangeFinished = onSliderValueChangeFinished,
-                showVUMeter = showVUMeter
+                showVUMeter = true
             )
         }
 
@@ -718,26 +718,49 @@ fun BottomSheetPlayer(
                                 }
                             } else {
                                 Box(modifier = Modifier.size(thumbnailSize)) {
-                                    Thumbnail(
-                                        sliderPositionProvider = { sliderPosition },
-                                        modifier = Modifier.fillMaxSize(),
-                                        isPlayerExpanded = state.isExpanded
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .align(Alignment.TopEnd)
-                                            .size(28.dp)
-                                            .clip(CircleShape)
-                                            .background(Color.Black.copy(alpha = 0.4f))
-                                            .clickable { showVUMeter = true },
-                                        contentAlignment = Alignment.Center
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.fillMaxSize()
                                     ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.tune),
-                                            contentDescription = "Show VU meter",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(16.dp)
-                                        )
+                                        Box(
+                                            modifier = Modifier.weight(1f),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Thumbnail(
+                                                sliderPositionProvider = { sliderPosition },
+                                                modifier = Modifier.fillMaxSize(),
+                                                isPlayerExpanded = state.isExpanded
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .align(Alignment.TopEnd)
+                                                    .padding(4.dp)
+                                                    .size(28.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color.Black.copy(alpha = 0.4f))
+                                                    .clickable { showVUMeter = true },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.tune),
+                                                    contentDescription = "Show VU meter",
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        val currentMetadata = enrichedMetadata ?: mediaMetadata
+                                        currentMetadata?.let { metadata ->
+                                            PlayerTitleSection(
+                                                mediaMetadata = metadata,
+                                                textBackgroundColor = TextBackgroundColor,
+                                                navController = navController,
+                                                state = state,
+                                                clipboardManager = clipboardManager,
+                                                context = context
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -822,7 +845,9 @@ fun BottomSheetPlayer(
                                             contentAlignment = Alignment.Center
                                         ) {
                                             VuMeter(
-                                                modifier = Modifier.fillMaxSize(),
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .aspectRatio(1f),
                                                 isPlayerExpanded = state.isExpanded
                                             )
                                             Box(
@@ -864,30 +889,60 @@ fun BottomSheetPlayer(
                                         Spacer(modifier = Modifier.height(12.dp))
                                     }
                                 }
-                            } else {
+                             } else {
                                 Box(
                                     modifier = Modifier.nestedScroll(state.preUpPostDownNestedScrollConnection)
                                 ) {
-                                    Thumbnail(
-                                        sliderPositionProvider = { sliderPosition },
-                                        modifier = Modifier.fillMaxSize(),
-                                        isPlayerExpanded = state.isExpanded
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .align(Alignment.TopEnd)
-                                            .size(28.dp)
-                                            .clip(CircleShape)
-                                            .background(Color.Black.copy(alpha = 0.4f))
-                                            .clickable { showVUMeter = true },
-                                        contentAlignment = Alignment.Center
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier.fillMaxSize()
                                     ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.tune),
-                                            contentDescription = "Show VU meter",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(16.dp)
-                                        )
+                                        Box(
+                                            modifier = Modifier.weight(1f),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Thumbnail(
+                                                sliderPositionProvider = { sliderPosition },
+                                                modifier = Modifier.fillMaxSize(),
+                                                isPlayerExpanded = state.isExpanded
+                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .align(Alignment.TopEnd)
+                                                    .padding(8.dp)
+                                                    .size(28.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color.Black.copy(alpha = 0.4f))
+                                                    .clickable { showVUMeter = true },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.tune),
+                                                    contentDescription = "Show VU meter",
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        val currentMetadata = enrichedMetadata ?: mediaMetadata
+                                        currentMetadata?.let { metadata ->
+                                            Column(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = com.nikhil.yt.constants.PlayerHorizontalPadding)
+                                            ) {
+                                                PlayerTitleSection(
+                                                    mediaMetadata = metadata,
+                                                    textBackgroundColor = TextBackgroundColor,
+                                                    navController = navController,
+                                                    state = state,
+                                                    clipboardManager = clipboardManager,
+                                                    context = context
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(12.dp))
                                     }
                                 }
                             }
