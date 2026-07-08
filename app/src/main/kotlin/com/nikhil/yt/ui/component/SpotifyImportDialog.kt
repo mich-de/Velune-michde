@@ -37,8 +37,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.TextButton
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.size
@@ -63,6 +66,7 @@ fun SpotifyImportDialog(
     var isImporting by remember { mutableStateOf(false) }
     var statusText by remember { mutableStateOf("") }
     var saveForSync by remember { mutableStateOf(true) }
+    var importJob by remember { mutableStateOf<Job?>(null) }
 
 
     fun showMessage(message: String) {
@@ -86,8 +90,9 @@ fun SpotifyImportDialog(
         isImporting = true
         statusText = "Connessione a Spotify..."
         
-        coroutineScope.launch(Dispatchers.IO) {
+        importJob = coroutineScope.launch(Dispatchers.IO) {
             val result = SpotifyImporter.fetchPlaylist(enteredUrl)
+            if (!isActive) return@launch
             result.onSuccess { spotifyPlaylist ->
                 val tracks = spotifyPlaylist.tracks
                 if (tracks.isEmpty()) {
@@ -99,6 +104,7 @@ fun SpotifyImportDialog(
                     return@launch
                 }
 
+                if (!isActive) return@launch
                 // Create local playlist
                 val newPlaylist = PlaylistEntity(
                     name = spotifyPlaylist.name,
@@ -120,7 +126,9 @@ fun SpotifyImportDialog(
                 var matchCount = 0
                 val matchIds = mutableListOf<String>()
 
-                tracks.forEachIndexed { index, track ->
+                for (index in tracks.indices) {
+                    if (!isActive) break
+                    val track = tracks[index]
                     val queryText = "${track.title} ${track.artist}"
                     withContext(Dispatchers.Main) {
                         statusText = "Cerco (${index + 1}/${tracks.size}): ${track.title}..."
@@ -140,6 +148,8 @@ fun SpotifyImportDialog(
                     }
                 }
 
+                if (!isActive) return@launch
+
                 if (matchIds.isNotEmpty()) {
                     database.addSongToPlaylist(playlist, matchIds)
                 }
@@ -155,10 +165,12 @@ fun SpotifyImportDialog(
                     navController?.navigate("local_playlist/${newPlaylist.id}")
                 }
             }.onFailure { exception ->
-                showMessage("Errore: ${exception.message ?: "Non riuscito"}")
-                withContext(Dispatchers.Main) {
-                    isImporting = false
-                    onDismiss()
+                if (isActive) {
+                    showMessage("Errore: ${exception.message ?: "Non riuscito"}")
+                    withContext(Dispatchers.Main) {
+                        isImporting = false
+                        onDismiss()
+                    }
                 }
             }
         }
@@ -176,7 +188,17 @@ fun SpotifyImportDialog(
                 onDismissRequest = {
                     if (!isImporting) onDismiss()
                 },
-                confirmButton = {},
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            importJob?.cancel()
+                            isImporting = false
+                            onDismiss()
+                        }
+                    ) {
+                        Text("Interrompi", color = MaterialTheme.colorScheme.error)
+                    }
+                },
                 dismissButton = {},
                 icon = {
                     Icon(
@@ -226,6 +248,16 @@ fun SpotifyImportDialog(
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            TextButton(
+                                onClick = {
+                                    importJob?.cancel()
+                                    isImporting = false
+                                    onDismiss()
+                                }
+                            ) {
+                                Text("Interrompi", color = MaterialTheme.colorScheme.error)
+                            }
                         }
                     } else {
                         Column(

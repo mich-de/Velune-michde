@@ -127,6 +127,13 @@ object SpotifyImporter {
             if (jsonElement.containsKey("trackList") && jsonElement["trackList"] is JsonArray) {
                 return jsonElement["trackList"] as JsonArray
             }
+            if (jsonElement.containsKey("tracks") && jsonElement["tracks"] is JsonArray) {
+                val arr = jsonElement["tracks"] as JsonArray
+                val first = arr.firstOrNull() as? JsonObject
+                if (first != null && (first.containsKey("title") || first.containsKey("name") || first.containsKey("uri"))) {
+                    return arr
+                }
+            }
             if (jsonElement.containsKey("tracks") && jsonElement["tracks"] is JsonObject) {
                 val tracksObj = jsonElement["tracks"] as JsonObject
                 if (tracksObj.containsKey("items") && tracksObj["items"] is JsonArray) {
