@@ -46,10 +46,8 @@ val recommendedPlaylists = listOf(
 @Composable
 fun LibrarySpotifyScreen(
     navController: NavController,
-    onBack: () -> Unit,
     filterContent: @Composable () -> Unit
 ) {
-    androidx.activity.compose.BackHandler(onBack = onBack)
     var showImportDialog by remember { mutableStateOf(false) }
     var selectedPlaylistUrl by remember { mutableStateOf("") }
     val playerAwarePadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()

@@ -216,11 +216,7 @@ fun LibraryScreen(navController: NavController) {
         when (filterType) {
             LibraryFilter.LIBRARY -> LibraryMixScreen(navController, filterContent)
             LibraryFilter.PLAYLISTS -> LibraryPlaylistsScreen(navController, filterContent)
-            LibraryFilter.SPOTIFY -> LibrarySpotifyScreen(
-                navController = navController,
-                onBack = { filterType = LibraryFilter.LIBRARY },
-                filterContent = filterContent
-            )
+            LibraryFilter.SPOTIFY -> LibrarySpotifyScreen(navController, filterContent)
             LibraryFilter.SONGS -> LibrarySongsScreen(
                 navController,
                 { filterType = LibraryFilter.LIBRARY })
