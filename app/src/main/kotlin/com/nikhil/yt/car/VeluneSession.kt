@@ -2,6 +2,8 @@ package com.nikhil.yt.car
 
 import android.content.ComponentName
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
 import androidx.car.app.Session
@@ -14,10 +16,9 @@ import androidx.car.app.model.Row
 import androidx.car.app.model.SearchTemplate
 import androidx.car.app.model.Template
 import androidx.core.graphics.drawable.IconCompat
-import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import androidx.media3.session.MediaController
+import androidx.media3.session.MediaBrowser
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -25,16 +26,18 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.nikhil.yt.R
 import com.nikhil.yt.playback.MusicService
 
+private val handler = Handler(Looper.getMainLooper())
+
 class VeluneSession : Session() {
     companion object {
         @Volatile
         var instance: VeluneSession? = null
     }
 
-    var mediaController: MediaController? = null
+    var mediaBrowser: MediaBrowser? = null
         private set
 
-    private var controllerFuture: ListenableFuture<MediaController>? = null
+    private var browserFuture: ListenableFuture<MediaBrowser>? = null
 
     override fun onCreateScreen(intent: Intent): Screen {
         instance = this
@@ -44,12 +47,12 @@ class VeluneSession : Session() {
 
     private fun connectToMediaService() {
         val token = SessionToken(carContext, ComponentName(carContext, MusicService::class.java))
-        val future = MediaController.Builder(carContext, token).buildAsync()
-        controllerFuture = future
+        val future = MediaBrowser.Builder(carContext, token).buildAsync()
+        browserFuture = future
         future.addListener(
             {
                 try {
-                    mediaController = Futures.getChecked(future, RuntimeException::class.java)
+                    mediaBrowser = Futures.getChecked(future, RuntimeException::class.java)
                 } catch (_: Exception) { }
             },
             MoreExecutors.directExecutor()
@@ -57,7 +60,7 @@ class VeluneSession : Session() {
     }
 
     fun playCategory(mediaId: String) {
-        val ctrl = mediaController ?: return
+        val browser = mediaBrowser ?: return
         val item = MediaItem.Builder()
             .setMediaId(mediaId)
             .setMediaMetadata(
@@ -66,9 +69,9 @@ class VeluneSession : Session() {
                     .build()
             )
             .build()
-        ctrl.setMediaItems(listOf(item))
-        ctrl.prepare()
-        ctrl.play()
+        browser.setMediaItems(listOf(item))
+        browser.prepare()
+        browser.play()
     }
 
     override fun onCarConfigurationChanged(newConfig: android.content.res.Configuration) {
@@ -94,27 +97,27 @@ private class BrowseRootScreen(carContext: CarContext) : BaseScreen(carContext) 
         val itemList = ItemList.Builder().apply {
             addItem(categoryRow(
                 carCtx.getString(R.string.liked_songs),
-                android.R.drawable.btn_star,
+                R.drawable.favorite,
                 "playlists/0"
             ))
             addItem(categoryRow(
                 carCtx.getString(R.string.songs),
-                android.R.drawable.ic_menu_sort_by_size,
+                R.drawable.music_note,
                 "songs"
             ))
             addItem(categoryRow(
                 carCtx.getString(R.string.artists),
-                android.R.drawable.ic_menu_gallery,
+                R.drawable.artist,
                 "artists"
             ))
             addItem(categoryRow(
                 carCtx.getString(R.string.albums),
-                android.R.drawable.ic_menu_gallery,
+                R.drawable.album,
                 "albums"
             ))
             addItem(categoryRow(
                 carCtx.getString(R.string.playlists),
-                android.R.drawable.ic_menu_manage,
+                R.drawable.queue_music,
                 "playlists"
             ))
         }.build()
@@ -134,8 +137,101 @@ private class BrowseRootScreen(carContext: CarContext) : BaseScreen(carContext) 
                 CarIcon.Builder(IconCompat.createWithResource(carCtx, iconRes)).build(),
                 Row.IMAGE_TYPE_SMALL
             )
-            .setOnClickListener { session?.playCategory(mediaId) }
+            .setOnClickListener {
+                screenManager.push(BrowseScreen(carCtx, mediaId, title))
+            }
             .build()
+}
+
+private class BrowseScreen(
+    carContext: CarContext,
+    val parentId: String,
+    val title: String
+) : BaseScreen(carContext) {
+    private var items: List<MediaItem> = emptyList()
+    private var isLoading = true
+
+    init {
+        loadChildren()
+    }
+
+    private fun loadChildren() {
+        val browser = session?.mediaBrowser
+        if (browser == null) {
+            handler.postDelayed({ loadChildren() }, 500)
+            return
+        }
+        val future = browser.getChildren(parentId, 0, 100, null)
+        future.addListener({
+            try {
+                val result = Futures.getChecked(future, RuntimeException::class.java)
+                items = result.value ?: emptyList()
+            } catch (_: Exception) {
+                items = emptyList()
+            }
+            isLoading = false
+            invalidate()
+        }, MoreExecutors.directExecutor())
+    }
+
+    override fun onGetTemplate(): Template {
+        if (isLoading) {
+            return ListTemplate.Builder()
+                .setTitle(title)
+                .setHeaderAction(Action.BACK)
+                .setLoading(true)
+                .build()
+        }
+
+        val itemListBuilder = ItemList.Builder()
+        if (items.isEmpty()) {
+            itemListBuilder.setNoItemsMessage("Empty")
+        } else {
+            for (item in items) {
+                val isBrowsable = item.mediaMetadata.isBrowsable == true
+                val rowBuilder = Row.Builder()
+                    .setTitle(item.mediaMetadata.title?.toString() ?: "Unknown Song")
+                    .addText(item.mediaMetadata.artist?.toString() ?: item.mediaMetadata.albumTitle?.toString() ?: "")
+
+                if (isBrowsable) {
+                    val iconRes = when {
+                        item.mediaId.startsWith("artists") -> R.drawable.artist
+                        item.mediaId.startsWith("albums") -> R.drawable.album
+                        else -> R.drawable.queue_music
+                    }
+                    rowBuilder.setImage(
+                        CarIcon.Builder(IconCompat.createWithResource(carCtx, iconRes)).build(),
+                        Row.IMAGE_TYPE_SMALL
+                    )
+                    rowBuilder.setOnClickListener {
+                        screenManager.push(BrowseScreen(carCtx, item.mediaId, item.mediaMetadata.title?.toString() ?: ""))
+                    }
+                } else {
+                    rowBuilder.setImage(
+                        CarIcon.Builder(IconCompat.createWithResource(carCtx, R.drawable.music_note)).build(),
+                        Row.IMAGE_TYPE_SMALL
+                    )
+                    rowBuilder.setOnClickListener {
+                        playSong(item)
+                    }
+                }
+                itemListBuilder.addItem(rowBuilder.build())
+            }
+        }
+
+        return ListTemplate.Builder()
+            .setTitle(title)
+            .setHeaderAction(Action.BACK)
+            .setSingleList(itemListBuilder.build())
+            .build()
+    }
+
+    private fun playSong(item: MediaItem) {
+        val browser = session?.mediaBrowser ?: return
+        browser.setMediaItems(listOf(item))
+        browser.prepare()
+        browser.play()
+    }
 }
 
 private class SearchScreen(carContext: CarContext) : BaseScreen(carContext) {
@@ -144,12 +240,107 @@ private class SearchScreen(carContext: CarContext) : BaseScreen(carContext) {
             object : SearchTemplate.SearchCallback {
                 override fun onSearchSubmitted(searchTerm: String) {
                     if (searchTerm.isNotBlank()) {
-                        session?.playCategory(searchTerm)
+                        screenManager.push(SearchResultScreen(carCtx, searchTerm))
                     }
                 }
             }
         )
             .setHeaderAction(Action.BACK)
             .build()
+    }
+}
+
+private class SearchResultScreen(
+    carContext: CarContext,
+    val query: String
+) : BaseScreen(carContext) {
+    private var items: List<MediaItem> = emptyList()
+    private var isLoading = true
+
+    init {
+        loadSearchResults()
+    }
+
+    private fun loadSearchResults() {
+        val browser = session?.mediaBrowser
+        if (browser == null) {
+            handler.postDelayed({ loadSearchResults() }, 500)
+            return
+        }
+        
+        val searchFuture = browser.search(query, null)
+        searchFuture.addListener({
+            val resultFuture = browser.getSearchResult(query, 0, 100, null)
+            resultFuture.addListener({
+                try {
+                    val result = Futures.getChecked(resultFuture, RuntimeException::class.java)
+                    items = result.value ?: emptyList()
+                } catch (_: Exception) {
+                    items = emptyList()
+                }
+                isLoading = false
+                invalidate()
+            }, MoreExecutors.directExecutor())
+        }, MoreExecutors.directExecutor())
+    }
+
+    override fun onGetTemplate(): Template {
+        val resultsTitle = "Search Results"
+        if (isLoading) {
+            return ListTemplate.Builder()
+                .setTitle(resultsTitle)
+                .setHeaderAction(Action.BACK)
+                .setLoading(true)
+                .build()
+        }
+
+        val itemListBuilder = ItemList.Builder()
+        if (items.isEmpty()) {
+            itemListBuilder.setNoItemsMessage("No results found")
+        } else {
+            for (item in items) {
+                val isBrowsable = item.mediaMetadata.isBrowsable == true
+                val rowBuilder = Row.Builder()
+                    .setTitle(item.mediaMetadata.title?.toString() ?: "Unknown Song")
+                    .addText(item.mediaMetadata.artist?.toString() ?: item.mediaMetadata.albumTitle?.toString() ?: "")
+
+                if (isBrowsable) {
+                    val iconRes = when {
+                        item.mediaId.startsWith("artists") -> R.drawable.artist
+                        item.mediaId.startsWith("albums") -> R.drawable.album
+                        else -> R.drawable.queue_music
+                    }
+                    rowBuilder.setImage(
+                        CarIcon.Builder(IconCompat.createWithResource(carCtx, iconRes)).build(),
+                        Row.IMAGE_TYPE_SMALL
+                    )
+                    rowBuilder.setOnClickListener {
+                        screenManager.push(BrowseScreen(carCtx, item.mediaId, item.mediaMetadata.title?.toString() ?: ""))
+                    }
+                } else {
+                    rowBuilder.setImage(
+                        CarIcon.Builder(IconCompat.createWithResource(carCtx, R.drawable.music_note)).build(),
+                        Row.IMAGE_TYPE_SMALL
+                    )
+                    rowBuilder.setOnClickListener {
+                        playSong(item)
+                    }
+                }
+                itemListBuilder.addItem(rowBuilder.build())
+            }
+        }
+
+        return ListTemplate.Builder()
+            .setTitle(resultsTitle)
+            .setHeaderAction(Action.BACK)
+            .setSingleList(itemListBuilder.build())
+            .build()
+    }
+
+    private fun playSong(item: MediaItem) {
+        val browser = session?.mediaBrowser ?: return
+        browser.setMediaItems(listOf(item))
+        browser.prepare()
+        browser.play()
     }
 }
