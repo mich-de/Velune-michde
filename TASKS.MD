@@ -27,5 +27,5 @@ Here is the task roadmap for integrating and optimizing the Android Auto experie
 - [x] [DOCUMENTATION] Update `README.MD` with details on Android Auto features. <!-- id: 5 -->
 
 ## Next Steps
-- [ ] [CAR_APP] V2: Sub-category browsing with database-backed lists. <!-- id: 17 -->
-- [ ] [CAR_APP] V2: `PlaybackTemplate` with custom action buttons. <!-- id: 18 -->
+- [x] [CAR_APP] V2: Sub-category browsing with database-backed lists. <!-- id: 17 -->
+- [x] [CAR_APP] V2: Search result templates and MediaBrowser navigation integration. <!-- id: 18 -->
