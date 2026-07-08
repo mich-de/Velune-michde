@@ -240,6 +240,7 @@ fun IntegrationScreen(
     if (showImportSpotifyDialog.value) {
         com.nikhil.yt.ui.component.SpotifyImportDialog(
             isVisible = showImportSpotifyDialog.value,
+            navController = navController,
             onDismiss = { showImportSpotifyDialog.value = false }
         )
     }

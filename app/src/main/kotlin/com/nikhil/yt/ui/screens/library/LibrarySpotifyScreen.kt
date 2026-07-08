@@ -84,6 +84,7 @@ fun LibrarySpotifyScreen(
         SpotifyImportDialog(
             isVisible = showImportDialog,
             initialUrl = selectedPlaylistUrl,
+            navController = navController,
             onDismiss = { showImportDialog = false }
         )
     }

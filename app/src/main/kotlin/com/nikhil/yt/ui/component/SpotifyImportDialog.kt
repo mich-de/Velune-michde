@@ -3,6 +3,7 @@ package com.nikhil.yt.ui.component
 import com.nikhil.yt.models.toMediaMetadata
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
+import androidx.navigation.NavController
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -41,6 +42,7 @@ import java.time.LocalDateTime
 fun SpotifyImportDialog(
     isVisible: Boolean,
     initialUrl: String = "",
+    navController: NavController? = null,
     snackbarHostState: SnackbarHostState? = null,
     onDismiss: () -> Unit,
 ) {
@@ -134,6 +136,7 @@ fun SpotifyImportDialog(
                 withContext(Dispatchers.Main) {
                     isImporting = false
                     onDismiss()
+                    navController?.navigate("local_playlist/${newPlaylist.id}")
                 }
             }.onFailure { exception ->
                 showMessage("Errore: ${exception.message ?: "Non riuscito"}")

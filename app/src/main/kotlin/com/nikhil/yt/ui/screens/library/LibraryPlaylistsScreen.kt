@@ -428,6 +428,7 @@ fun LibraryPlaylistsScreen(
     if (showImportSpotifyDialog) {
         com.nikhil.yt.ui.component.SpotifyImportDialog(
             isVisible = showImportSpotifyDialog,
+            navController = navController,
             onDismiss = { showImportSpotifyDialog = false }
         )
     }
