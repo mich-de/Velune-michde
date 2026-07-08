@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.nikhil.yt.R
+import com.nikhil.yt.LocalPlayerAwareWindowInsets
 import com.nikhil.yt.ui.component.SpotifyImportDialog
 
 data class SpotifyRecommendedPlaylist(
@@ -45,10 +46,13 @@ val recommendedPlaylists = listOf(
 @Composable
 fun LibrarySpotifyScreen(
     navController: NavController,
+    onBack: () -> Unit,
     filterContent: @Composable () -> Unit
 ) {
+    androidx.activity.compose.BackHandler(onBack = onBack)
     var showImportDialog by remember { mutableStateOf(false) }
     var selectedPlaylistUrl by remember { mutableStateOf("") }
+    val playerAwarePadding = LocalPlayerAwareWindowInsets.current.asPaddingValues()
 
     Column(modifier = Modifier.fillMaxSize()) {
         filterContent()
@@ -63,7 +67,12 @@ fun LibrarySpotifyScreen(
 
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 160.dp),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                top = 16.dp,
+                bottom = playerAwarePadding.calculateBottomPadding() + 16.dp
+            ),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.weight(1f)
