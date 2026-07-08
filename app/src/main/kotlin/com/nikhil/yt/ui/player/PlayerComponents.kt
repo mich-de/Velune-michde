@@ -380,6 +380,93 @@ fun PlayerTopActions(
     context: Context,
     currentSongLiked: Boolean
 ) {
+    var showSleepTimerDialog by remember { mutableStateOf(false) }
+    var sleepTimerValue by remember { androidx.compose.runtime.mutableFloatStateOf(30f) }
+    var showEqualizerDialog by remember { mutableStateOf(false) }
+
+    val activityResultLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+        onResult = {}
+    )
+
+    if (showSleepTimerDialog) {
+        androidx.compose.material3.AlertDialog(
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+            onDismissRequest = { showSleepTimerDialog = false },
+            icon = {
+                Icon(
+                    painter = painterResource(R.drawable.bedtime),
+                    contentDescription = null
+                )
+            },
+            title = { Text(androidx.compose.ui.res.stringResource(R.string.sleep_timer)) },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showSleepTimerDialog = false
+                        playerConnection.service.sleepTimer.start(sleepTimerValue.toInt())
+                    },
+                ) {
+                    Text(androidx.compose.ui.res.stringResource(android.R.string.ok))
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = { showSleepTimerDialog = false },
+                ) {
+                    Text(androidx.compose.ui.res.stringResource(android.R.string.cancel))
+                }
+            },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = androidx.compose.ui.res.pluralStringResource(
+                            R.plurals.minute,
+                            sleepTimerValue.toInt(),
+                            sleepTimerValue.toInt()
+                        ),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+
+                    Slider(
+                        value = sleepTimerValue,
+                        onValueChange = { sleepTimerValue = it },
+                        valueRange = 5f..120f,
+                        steps = (120 - 5) / 5 - 1,
+                    )
+
+                    androidx.compose.material3.OutlinedIconButton(
+                        onClick = {
+                            showSleepTimerDialog = false
+                            playerConnection.service.sleepTimer.start(-1)
+                        },
+                    ) {
+                        Text(androidx.compose.ui.res.stringResource(R.string.end_of_song))
+                    }
+                }
+            }
+        )
+    }
+
+    if (showEqualizerDialog) {
+        com.nikhil.yt.ui.menu.EqualizerDialog(
+            onDismiss = { showEqualizerDialog = false },
+            openSystemEqualizer = {
+                val intent = Intent(android.media.audiofx.AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL).apply {
+                    putExtra(
+                        android.media.audiofx.AudioEffect.EXTRA_AUDIO_SESSION,
+                        playerConnection.player.audioSessionId,
+                    )
+                    putExtra(android.media.audiofx.AudioEffect.EXTRA_PACKAGE_NAME, context.packageName)
+                    putExtra(android.media.audiofx.AudioEffect.EXTRA_CONTENT_TYPE, android.media.audiofx.AudioEffect.CONTENT_TYPE_MUSIC)
+                }
+                if (intent.resolveActivity(context.packageManager) != null) {
+                    activityResultLauncher.launch(intent)
+                }
+            }
+        )
+    }
+
     when (playerDesignStyle) {
         PlayerDesignStyle.V2 -> {
             val shareShape = RoundedCornerShape(
@@ -534,7 +621,7 @@ fun PlayerTopActions(
 
         PlayerDesignStyle.V4 -> {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 DeezerDownloadButton(
@@ -602,6 +689,42 @@ fun PlayerTopActions(
                             tint = if (currentSongLiked)
                                 MaterialTheme.colorScheme.error
                             else textBackgroundColor,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+
+                Surface(
+                    onClick = { showSleepTimerDialog = true },
+                    shape = RoundedCornerShape(14.dp),
+                    color = textBackgroundColor.copy(alpha = 0.12f),
+                    modifier = Modifier
+                        .height(44.dp)
+                        .width(44.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Icon(
+                            painter = painterResource(R.drawable.bedtime),
+                            contentDescription = "Timer di spegnimento",
+                            tint = textBackgroundColor,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+
+                Surface(
+                    onClick = { showEqualizerDialog = true },
+                    shape = RoundedCornerShape(14.dp),
+                    color = textBackgroundColor.copy(alpha = 0.12f),
+                    modifier = Modifier
+                        .height(44.dp)
+                        .width(44.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Icon(
+                            painter = painterResource(R.drawable.equalizer),
+                            contentDescription = "Equalizzatore",
+                            tint = textBackgroundColor,
                             modifier = Modifier.size(22.dp)
                         )
                     }
