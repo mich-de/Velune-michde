@@ -29,12 +29,14 @@ import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.nikhil.yt.R
+import com.nikhil.yt.extensions.toMediaItem
+import com.nikhil.yt.innertube.YouTube
+import com.nikhil.yt.innertube.models.SongItem
 import com.nikhil.yt.constants.MediaSessionConstants
 import com.nikhil.yt.constants.SongSortType
 import com.nikhil.yt.db.MusicDatabase
 import com.nikhil.yt.db.entities.PlaylistEntity
 import com.nikhil.yt.db.entities.Song
-import com.nikhil.yt.extensions.toMediaItem
 import com.nikhil.yt.extensions.toggleRepeatMode
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -168,10 +170,11 @@ constructor(
             val q = query.trim()
             println("VeluneSearch: onSearch query='$q'")
             if (q.isNotBlank()) {
-                val songsCount = database.searchSongs(q, previewSize = 50).first().size
-                val artistsCount = database.searchArtists(q, previewSize = 50).first().size
-                val totalCount = songsCount + artistsCount
-                println("VeluneSearch: onSearch found totalCount=$totalCount (songs=$songsCount, artists=$artistsCount)")
+                val localSongsCount = database.searchSongs(q, previewSize = 20).first().size
+                val onlineResult = YouTube.search(q, YouTube.SearchFilter.FILTER_SONG).getOrNull()
+                val onlineSongsCount = onlineResult?.items?.filterIsInstance<SongItem>()?.size ?: 0
+                val totalCount = localSongsCount + onlineSongsCount
+                println("VeluneSearch: onSearch found totalCount=$totalCount (local=$localSongsCount, online=$onlineSongsCount)")
                 session.notifySearchResultChanged(browser, query, totalCount, params)
             }
             LibraryResult.ofVoid(params)
@@ -198,9 +201,16 @@ constructor(
             val songs = database.searchSongs(q, previewSize = requested).first()
             items += songs.map { it.toMediaItem(MusicService.SONG) }
 
+            try {
+                val onlineResult = YouTube.search(q, YouTube.SearchFilter.FILTER_SONG).getOrNull()
+                val onlineSongs = onlineResult?.items?.filterIsInstance<SongItem>() ?: emptyList()
+                items += onlineSongs.map { it.toMediaItem() }
+            } catch (e: Exception) {
+                println("VeluneSearch: Online search failed: ${e.message}")
+            }
+
             if (items.size < requested) {
                 val remaining = requested - items.size
-
                 val artists = database.searchArtists(q, previewSize = remaining).first()
                 items +=
                     artists.map { artist ->
@@ -220,7 +230,6 @@ constructor(
 
             if (items.size < requested) {
                 val remaining = requested - items.size
-
                 val albums = database.searchAlbums(q, previewSize = remaining).first()
                 items +=
                     albums.map { album ->
@@ -236,7 +245,6 @@ constructor(
 
             if (items.size < requested) {
                 val remaining = requested - items.size
-
                 val playlists = database.searchPlaylists(q, previewSize = remaining).first()
                 items +=
                     playlists.map { playlist ->
