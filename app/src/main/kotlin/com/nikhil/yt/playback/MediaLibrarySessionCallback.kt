@@ -939,10 +939,34 @@ constructor(
                         )
                     } ?: LibraryResult.ofError(SessionError.ERROR_UNKNOWN)
 
-                else ->
-                    database.song(mediaId).first()?.toMediaItem()?.let {
-                        LibraryResult.ofItem(it, null)
-                    } ?: LibraryResult.ofError(SessionError.ERROR_UNKNOWN)
+                else -> {
+                    val player = session.player
+                    var foundItem: MediaItem? = null
+                    for (i in 0 until player.mediaItemCount) {
+                        val item = player.getMediaItemAt(i)
+                        if (item.mediaId == mediaId || item.mediaId.substringAfterLast("/") == mediaId) {
+                            foundItem = item
+                            break
+                        }
+                    }
+                    if (foundItem != null) {
+                        LibraryResult.ofItem(
+                            MediaItem.Builder()
+                                .setMediaId(mediaId)
+                                .setMediaMetadata(
+                                    foundItem.mediaMetadata.buildUpon()
+                                        .setIsPlayable(true)
+                                        .setIsBrowsable(false)
+                                        .build()
+                                ).build(),
+                            null
+                        )
+                    } else {
+                        database.song(mediaId).first()?.toMediaItem()?.let {
+                            LibraryResult.ofItem(it, null)
+                        } ?: LibraryResult.ofError(SessionError.ERROR_UNKNOWN)
+                    }
+                }
             }
         }
 
