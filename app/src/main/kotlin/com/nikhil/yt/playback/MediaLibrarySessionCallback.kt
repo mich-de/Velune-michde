@@ -331,6 +331,14 @@ constructor(
                                 browsableHint = CONTENT_STYLE_LIST_ITEM,
                             ),
                             browsableMediaItem(
+                                MusicService.QUEUE,
+                                "Coda",
+                                null,
+                                drawableUri(R.drawable.queue_music),
+                                MediaMetadata.MEDIA_TYPE_PLAYLIST,
+                                browsableHint = CONTENT_STYLE_LIST_ITEM,
+                            ),
+                            browsableMediaItem(
                                 "library",
                                 "Libreria",
                                 null,

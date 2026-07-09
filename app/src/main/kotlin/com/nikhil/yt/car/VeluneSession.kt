@@ -130,6 +130,11 @@ private class BrowseRootScreen(carContext: CarContext) : BaseScreen(carContext) 
                 "recent"
             ))
             addItem(categoryRow(
+                "Coda",
+                R.drawable.queue_music,
+                "queue"
+            ))
+            addItem(categoryRow(
                 "Libreria",
                 R.drawable.library_music,
                 "library"
