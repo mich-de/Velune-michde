@@ -39,6 +39,16 @@ class VeluneSession : Session() {
 
     private var browserFuture: ListenableFuture<MediaBrowser>? = null
 
+    fun logError(message: String, e: Throwable? = null) {
+        try {
+            println("VeluneCarApp: $message")
+            val logFile = java.io.File(carContext.cacheDir, "car_log.txt")
+            val time = java.time.LocalDateTime.now().toString()
+            val errText = e?.let { "\n${android.util.Log.getStackTraceString(it)}" } ?: ""
+            logFile.appendText("[$time] $message$errText\n")
+        } catch (_: Exception) {}
+    }
+
     override fun onCreateScreen(intent: Intent): Screen {
         instance = this
         connectToMediaService()
@@ -46,17 +56,26 @@ class VeluneSession : Session() {
     }
 
     private fun connectToMediaService() {
-        val token = SessionToken(carContext, ComponentName(carContext, MusicService::class.java))
-        val future = MediaBrowser.Builder(carContext, token).buildAsync()
-        browserFuture = future
-        future.addListener(
-            {
-                try {
-                    mediaBrowser = Futures.getChecked(future, RuntimeException::class.java)
-                } catch (_: Exception) { }
-            },
-            MoreExecutors.directExecutor()
-        )
+        logError("Connecting to MediaService...")
+        try {
+            val appCtx = carContext.applicationContext
+            val token = SessionToken(appCtx, ComponentName(appCtx, MusicService::class.java))
+            val future = MediaBrowser.Builder(appCtx, token).buildAsync()
+            browserFuture = future
+            future.addListener(
+                {
+                    try {
+                        mediaBrowser = future.get()
+                        logError("Connected successfully to MediaBrowser!")
+                    } catch (e: Exception) {
+                        logError("Failed to get MediaBrowser inside future listener", e)
+                    }
+                },
+                MoreExecutors.directExecutor()
+            )
+        } catch (e: Exception) {
+            logError("Failed to initiate MediaBrowser connection", e)
+        }
     }
 
     fun playCategory(mediaId: String) {
@@ -164,9 +183,10 @@ private class BrowseScreen(
         val future = browser.getChildren(parentId, 0, 100, null)
         future.addListener({
             try {
-                val result = Futures.getChecked(future, RuntimeException::class.java)
+                val result = future.get()
                 items = result.value ?: emptyList()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                session?.logError("loadChildren failed for parentId = $parentId", e)
                 items = emptyList()
             }
             isLoading = false
@@ -273,13 +293,14 @@ private class SearchResultScreen(
             val resultFuture = browser.getSearchResult(query, 0, 100, null)
             resultFuture.addListener({
                 try {
-                    val result = Futures.getChecked(resultFuture, RuntimeException::class.java)
-                    items = result.value ?: emptyList()
-                } catch (_: Exception) {
-                    items = emptyList()
-                }
-                isLoading = false
-                invalidate()
+                val result = resultFuture.get()
+                items = result.value ?: emptyList()
+            } catch (e: Exception) {
+                session?.logError("loadSearchResults failed for query = $query", e)
+                items = emptyList()
+            }
+            isLoading = false
+            invalidate()
             }, MoreExecutors.directExecutor())
         }, MoreExecutors.directExecutor())
     }

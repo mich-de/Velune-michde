@@ -32,15 +32,15 @@ data class SpotifyRecommendedPlaylist(
 val recommendedPlaylists = listOf(
     SpotifyRecommendedPlaylist("Top 50 - Mondo", "La classifica giornaliera dei brani più ascoltati a livello globale.", "https://open.spotify.com/playlist/37i9dQZEVXbMDoHDwVN2tF"),
     SpotifyRecommendedPlaylist("Top 50 - Italia", "I 50 brani più ascoltati in Italia ogni giorno.", "https://open.spotify.com/playlist/37i9dQZEVXbIQnj7RRhdSX"),
-    SpotifyRecommendedPlaylist("Top 50 - Spagna", "I brani del momento in Spagna, aggiornati quotidianamente.", "https://open.spotify.com/playlist/37i9dQZEVXbJwoKy8qKpHG"),
-    SpotifyRecommendedPlaylist("Top 50 - Brasile", "Le hit più trasmesse e ascoltate in Brasile.", "https://open.spotify.com/playlist/37i9dQZF1DX0FOF1IUWK1W"),
-    SpotifyRecommendedPlaylist("Top 50 - Germania", "I brani più ascoltati in Germania, aggiornati quotidianamente.", "https://open.spotify.com/playlist/37i9dQZEVXbJiZcmkrIHGU"),
+    SpotifyRecommendedPlaylist("Top 50 - Spagna", "I brani del momento in Spagna, aggiornati quotidianamente.", "https://open.spotify.com/playlist/37i9dQZEVXbNFJfNWhZi8W"),
+    SpotifyRecommendedPlaylist("Top 50 - Brasile", "Le hit più trasmesse e ascoltate in Brasile.", "https://open.spotify.com/playlist/37i9dQZEVXbMXbN3EUUhlg"),
+    SpotifyRecommendedPlaylist("Top 50 - Germania", "I brani più ascoltati in Germania, aggiornati quotidianamente.", "https://open.spotify.com/playlist/37i9dQZEVXbJiZcmfTiPZ2"),
     SpotifyRecommendedPlaylist("Top 50 - Argentina", "Le migliori canzoni del momento in Argentina.", "https://open.spotify.com/playlist/37i9dQZEVXbMMy2roB9myp"),
     SpotifyRecommendedPlaylist("Today's Top Hits", "Il punto di riferimento globale per la musica pop e le hit del momento.", "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M"),
     SpotifyRecommendedPlaylist("Viva Latino", "Il meglio del panorama reggaeton, pop latino e urban.", "https://open.spotify.com/playlist/37i9dQZF1DX10zKzsJ2jva"),
     SpotifyRecommendedPlaylist("Mega Hit Mix", "Un mix dinamico di successi mondiali, pop ed elettronici.", "https://open.spotify.com/playlist/37i9dQZF1DXbYM3nMM0oPk"),
     SpotifyRecommendedPlaylist("RapCaviar", "Il tempio dell'hip-hop internazionale con tutte le nuove uscite.", "https://open.spotify.com/playlist/37i9dQZF1DX0XUsuxWHRQd"),
-    SpotifyRecommendedPlaylist("Rock Classics", "I grandi capolavori immortali della storia della musica rock.", "https://open.spotify.com/playlist/37i9dQZF1DWXRqgorJj26U"),
+    SpotifyRecommendedPlaylist("Rock Classics", "I grandi capolavori immortali della storia della musica rock.", "https://open.spotify.com/playlist/37i9dQZF1DWXRqbbSj53Jp"),
     SpotifyRecommendedPlaylist("Top 50 - UK", "I brani più ascoltati nel Regno Unito ogni giorno.", "https://open.spotify.com/playlist/37i9dQZEVXbLnolsZ8PSNw"),
     SpotifyRecommendedPlaylist("Lofi Beats", "Ritmi lofi e chill per rilassarsi, studiare o concentrarsi.", "https://open.spotify.com/playlist/37i9dQZF1DWWQRwui0ExPn")
 )

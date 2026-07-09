@@ -16,6 +16,7 @@ import androidx.annotation.DrawableRes
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
@@ -80,6 +81,19 @@ constructor(
         controller: MediaSession.ControllerInfo,
     ): MediaSession.ConnectionResult {
         val connectionResult = super.onConnect(session, controller)
+        val playerCommands = connectionResult.availablePlayerCommands.buildUpon()
+            .add(Player.COMMAND_PLAY_PAUSE)
+            .add(Player.COMMAND_PREPARE)
+            .add(Player.COMMAND_CHANGE_MEDIA_ITEMS)
+            .add(Player.COMMAND_SEEK_TO_MEDIA_ITEM)
+            .add(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
+            .add(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+            .add(Player.COMMAND_STOP)
+            .add(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
+            .add(Player.COMMAND_SET_SHUFFLE_MODE)
+            .add(Player.COMMAND_SET_REPEAT_MODE)
+            .build()
+
         return MediaSession.ConnectionResult.accept(
             connectionResult.availableSessionCommands
                 .buildUpon()
@@ -89,7 +103,7 @@ constructor(
                 .add(MediaSessionConstants.CommandToggleShuffle)
                 .add(MediaSessionConstants.CommandToggleRepeatMode)
                 .build(),
-            connectionResult.availablePlayerCommands,
+            playerCommands,
         )
     }
 
@@ -564,42 +578,50 @@ constructor(
             val path = firstItem.mediaId.split("/").filter { it.isNotBlank() }
             when (path.firstOrNull()) {
                 MusicService.SONG -> {
-                    val songId = path.getOrNull(1) ?: return@future defaultResult
+                    val songId = path.getOrNull(1)
                     val allSongs = database.songsByCreateDateAsc().first()
+                    val index = if (songId != null) {
+                        allSongs.indexOfFirst { it.id == songId }.takeIf { it != -1 } ?: 0
+                    } else 0
                     MediaSession.MediaItemsWithStartPosition(
                         allSongs.map { it.toMediaItem() },
-                        allSongs.indexOfFirst { it.id == songId }.takeIf { it != -1 } ?: 0,
+                        index,
                         startPositionMs,
                     )
                 }
 
                 MusicService.ARTIST -> {
-                    val songId = path.getOrNull(2) ?: return@future defaultResult
                     val artistId = path.getOrNull(1) ?: return@future defaultResult
+                    val songId = path.getOrNull(2)
                     val songs = database.artistSongsByCreateDateAsc(artistId).first()
+                    val index = if (songId != null) {
+                        songs.indexOfFirst { it.id == songId }.takeIf { it != -1 } ?: 0
+                    } else 0
                     MediaSession.MediaItemsWithStartPosition(
                         songs.map { it.toMediaItem() },
-                        songs.indexOfFirst { it.id == songId }.takeIf { it != -1 } ?: 0,
+                        index,
                         startPositionMs,
                     )
                 }
 
                 MusicService.ALBUM -> {
-                    val songId = path.getOrNull(2) ?: return@future defaultResult
                     val albumId = path.getOrNull(1) ?: return@future defaultResult
+                    val songId = path.getOrNull(2)
                     val albumWithSongs =
                         database.albumWithSongs(albumId).first() ?: return@future defaultResult
+                    val index = if (songId != null) {
+                        albumWithSongs.songs.indexOfFirst { it.id == songId }.takeIf { it != -1 } ?: 0
+                    } else 0
                     MediaSession.MediaItemsWithStartPosition(
                         albumWithSongs.songs.map { it.toMediaItem() },
-                        albumWithSongs.songs.indexOfFirst { it.id == songId }.takeIf { it != -1 }
-                            ?: 0,
+                        index,
                         startPositionMs,
                     )
                 }
 
                 MusicService.PLAYLIST -> {
-                    val songId = path.getOrNull(2) ?: return@future defaultResult
                     val playlistId = path.getOrNull(1) ?: return@future defaultResult
+                    val songId = path.getOrNull(2)
                     val songs =
                         when (playlistId) {
                             PlaylistEntity.LIKED_PLAYLIST_ID -> database.likedSongs(
@@ -629,9 +651,12 @@ constructor(
                                     list.map { it.song }
                                 }
                         }.first()
+                    val index = if (songId != null) {
+                        songs.indexOfFirst { it.id == songId }.takeIf { it != -1 } ?: 0
+                    } else 0
                     MediaSession.MediaItemsWithStartPosition(
                         songs.map { it.toMediaItem() },
-                        songs.indexOfFirst { it.id == songId }.takeIf { it != -1 } ?: 0,
+                        index,
                         startPositionMs,
                     )
                 }

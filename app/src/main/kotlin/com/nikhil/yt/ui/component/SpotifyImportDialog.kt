@@ -295,11 +295,11 @@ fun SpotifyImportDialog(
                             
                             val shortcuts = listOf(
                                 "Top 50 Mondo" to "https://open.spotify.com/playlist/37i9dQZEVXbMDoHDwVN2tF",
-                                "Top 50 Germania" to "https://open.spotify.com/playlist/37i9dQZEVXbJiZcmkrIHGU",
+                                "Top 50 Germania" to "https://open.spotify.com/playlist/37i9dQZEVXbJiZcmfTiPZ2",
                                 "Top 50 Argentina" to "https://open.spotify.com/playlist/37i9dQZEVXbMMy2roB9myp",
                                 "Top 50 Italia" to "https://open.spotify.com/playlist/37i9dQZEVXbIQnj7RRhdSX",
-                                "Top 50 Brasile" to "https://open.spotify.com/playlist/37i9dQZF1DX0FOF1IUWK1W",
-                                "Top 50 Spagna" to "https://open.spotify.com/playlist/37i9dQZEVXbJwoKy8qKpHG",
+                                "Top 50 Brasile" to "https://open.spotify.com/playlist/37i9dQZEVXbMXbN3EUUhlg",
+                                "Top 50 Spagna" to "https://open.spotify.com/playlist/37i9dQZEVXbNFJfNWhZi8W",
                                 "Top 50 UK" to "https://open.spotify.com/playlist/37i9dQZEVXbLnolsZ8PSNw"
                             )
                             
