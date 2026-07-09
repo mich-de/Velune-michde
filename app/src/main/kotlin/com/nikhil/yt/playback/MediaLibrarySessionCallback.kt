@@ -973,8 +973,11 @@ constructor(
                             startPositionMs,
                         )
                     } else {
+                        val cleanItem = firstItem.buildUpon()
+                            .setMediaId(songId ?: firstItem.mediaId)
+                            .build()
                         MediaSession.MediaItemsWithStartPosition(
-                            mediaItems,
+                            listOf(cleanItem),
                             0,
                             startPositionMs,
                         )

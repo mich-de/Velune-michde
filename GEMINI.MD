@@ -83,4 +83,8 @@
   - Fixed integer overflow crashes in `onGetSearchResult` caused by Android Auto requesting `pageSize = Int.MAX_VALUE` by capping page and pageSize values.
   - Fixed Media3 validation crash on search results by ensuring online search result items explicitly define `isBrowsable` and `isPlayable` in their metadata.
   - Updated `headunit.ini` using the case-sensitive `[general]` section with resolution `1280x720` and DPI `120` to make UI elements smaller, sharper, and fit more information on screen.
+  - Consolidated root categories to 5 items (Preferiti, Scaricate, Storia, Coda, Libreria) to optimize screen space on 7-inch displays.
+  - Added "Testo" (Lyrics) root category tab and a custom `NowPlayingScreen` inside the car app context displaying scrollable lyrics, playback control buttons (Prev, Play/Pause, Next), and a "Traduci" (Translate) button.
+  - Implemented background lyrics translator to automatically translate lyrics to phone's system language, update database, and notify children changed.
+  - Fixed infinite buffering/loading crash in online search result playback by stripping the `"song/"` prefix from online media IDs in `onSetMediaItems`.
 
