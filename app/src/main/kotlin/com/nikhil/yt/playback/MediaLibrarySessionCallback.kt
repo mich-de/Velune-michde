@@ -67,6 +67,7 @@ constructor(
         putBoolean(EXTRA_CONTENT_STYLE_SUPPORTED, true)
         putInt(EXTRA_CONTENT_STYLE_BROWSABLE_HINT, browsableHint)
         putInt(EXTRA_CONTENT_STYLE_PLAYABLE_HINT, playableHint)
+        putBoolean("android.media.browse.SEARCH_SUPPORTED", true)
     }
 
     private fun playableExtras(
