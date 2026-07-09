@@ -829,6 +829,13 @@ constructor(
                 }
 
                 else -> {
+                    if (firstItem.mediaMetadata.isPlayable == true) {
+                        return@future MediaSession.MediaItemsWithStartPosition(
+                            mediaItems,
+                            0,
+                            startPositionMs,
+                        )
+                    }
                     val query = firstItem.requestMetadata.searchQuery?.trim().orEmpty()
                     if (query.isBlank()) return@future defaultResult
 

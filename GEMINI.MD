@@ -79,4 +79,5 @@
   - Configured Albums, Artists, and User Playlists folders to display as **Grid Items** (`CONTENT_STYLE_GRID_ITEM`) to take advantage of album covers and artist thumbnails on spacious vehicle displays, while keeping root category folders as lists.
   - Added playback routing for the new `recent` and `queue` categories inside `onSetMediaItems` to support folder-level playback and index seeking.
   - Configured port forwarding (`adb forward tcp:5277 tcp:5277`) and launched the Android Auto **Desktop Head Unit (DHU)** emulator.
+  - Fixed Android Auto online search result playback: resolved a playback failure when clicking online search items by modifying the `else` branch of `onSetMediaItems` to directly play the item if it is marked as playable, bypassing database lookups.
 
