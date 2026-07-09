@@ -63,6 +63,12 @@
     - Added a "Sincronizza all'avvio" checkbox to the manual import dialog. If selected (or by default for recommended lists), the playlist's metadata and URL are saved in preferences.
     - Implemented background synchronization (`syncSavedPlaylists`) inside [SpotifyImporter.kt](file:///D:/android_player/app/src/main/kotlin/com/nikhil/yt/utils/SpotifyImporter.kt) and registered it inside [MainActivity.kt](file:///D:/android_player/app/src/main/kotlin/com/nikhil/yt/MainActivity.kt)'s `onCreate` to automatically search and add new songs to saved Spotify playlists on app startup.
     - Added cooperative coroutine cancellation and "Interrompi" (Stop) buttons to progress dialogs to allow users to cancel active Spotify playlist imports at any time.
+    - Updated recommended Spotify charts list in [LibrarySpotifyScreen.kt](file:///D:/android_player/app/src/main/kotlin/com/nikhil/yt/ui/screens/library/LibrarySpotifyScreen.kt) with working public playlist IDs for Spain, Brazil, Germany, and Italy.
+    - Fixed Android Auto media browser connection and playback:
+      - Used `carContext.applicationContext` rather than `carContext` wrapper to successfully establish `MediaBrowser` connections.
+      - Replaced Guava `Futures.getChecked` helper with standard `future.get()` to prevent class validation and execution crashes across SDK layers.
+      - Updated `onConnect` in [MediaLibrarySessionCallback.kt](file:///D:/android_player/app/src/main/kotlin/com/nikhil/yt/playback/MediaLibrarySessionCallback.kt) to explicitly authorize all playback control commands (Play/Pause, Seek, Shuffle, Repeat) for external car/media controllers.
+      - Updated `onSetMediaItems` to support folder/category-level playback, falling back to playing from index 0 when `songId` is not supplied.
   - Optimized **Crossfade Playback & Now Playing UI**:
     - Resolved crossfade abrupt cutting bugs inside [CrossfadeAudio.kt](file:///D:/android_player/app/src/main/kotlin/com/nikhil/yt/playback/CrossfadeAudio.kt) by delaying next-track audio playback (`playWhenReady = false`) during background buffering to avoid AudioTrack conflicts, and expanded seek sync intervals/tolerances (3s interval, 800ms threshold) to prevent rapid seek storms.
     - Added direct quick-action buttons for the **Sleep Timer** (`bedtime` moon icon) and **Equalizer** (`equalizer` sliders icon) in the action bar of [PlayerComponents.kt](file:///D:/android_player/app/src/main/kotlin/com/nikhil/yt/ui/player/PlayerComponents.kt), positioning the `...` menu as the final element in the row.
