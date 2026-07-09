@@ -964,13 +964,21 @@ constructor(
                     val songId = path.getOrNull(1)
                     val allSongs = database.songsByCreateDateAsc().first()
                     val index = if (songId != null) {
-                        allSongs.indexOfFirst { it.id == songId }.takeIf { it != -1 } ?: 0
-                    } else 0
-                    MediaSession.MediaItemsWithStartPosition(
-                        allSongs.map { it.toMediaItem() },
-                        index,
-                        startPositionMs,
-                    )
+                        allSongs.indexOfFirst { it.id == songId }
+                    } else -1
+                    if (index != -1) {
+                        MediaSession.MediaItemsWithStartPosition(
+                            allSongs.map { it.toMediaItem() },
+                            index,
+                            startPositionMs,
+                        )
+                    } else {
+                        MediaSession.MediaItemsWithStartPosition(
+                            mediaItems,
+                            0,
+                            startPositionMs,
+                        )
+                    }
                 }
 
                 MusicService.ARTIST -> {

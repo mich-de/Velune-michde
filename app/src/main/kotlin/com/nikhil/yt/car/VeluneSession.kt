@@ -18,6 +18,7 @@ import androidx.car.app.model.Template
 import androidx.core.graphics.drawable.IconCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.Player
 import androidx.media3.session.MediaBrowser
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.Futures
@@ -162,7 +163,11 @@ private class BrowseRootScreen(carContext: CarContext) : BaseScreen(carContext) 
                 Row.IMAGE_TYPE_SMALL
             )
             .setOnClickListener {
-                screenManager.push(BrowseScreen(carCtx, mediaId, title))
+                if (mediaId == "lyrics") {
+                    screenManager.push(NowPlayingScreen(carCtx))
+                } else {
+                    screenManager.push(BrowseScreen(carCtx, mediaId, title))
+                }
             }
             .build()
 }
@@ -394,5 +399,161 @@ private class SearchResultScreen(
         browser.setMediaItems(listOf(item))
         browser.prepare()
         browser.play()
+    }
+}
+
+private class NowPlayingScreen(carContext: CarContext) : BaseScreen(carContext) {
+    private var lyricsText: String = "Caricamento testo..."
+    private var songTitle = "Nessun brano"
+    private var songArtist = ""
+    private var isPlaying = false
+    private var currentSongId: String? = null
+
+    private val playerListener = object : Player.Listener {
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            updateCurrentSong()
+        }
+
+        override fun onIsPlayingChanged(playing: Boolean) {
+            isPlaying = playing
+            invalidate()
+        }
+    }
+
+    init {
+        lifecycle.addObserver(androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_DESTROY) {
+                session?.mediaBrowser?.removeListener(playerListener)
+            }
+        })
+        handler.post {
+            val browser = session?.mediaBrowser
+            if (browser != null) {
+                browser.addListener(playerListener)
+                isPlaying = browser.isPlaying
+                updateCurrentSong()
+            } else {
+                checkBrowserConnection()
+            }
+        }
+    }
+
+    private fun checkBrowserConnection() {
+        val browser = session?.mediaBrowser
+        if (browser != null) {
+            browser.addListener(playerListener)
+            isPlaying = browser.isPlaying
+            updateCurrentSong()
+        } else {
+            handler.postDelayed({ checkBrowserConnection() }, 500)
+        }
+    }
+
+    private fun updateCurrentSong() {
+        val browser = session?.mediaBrowser ?: return
+        val currentItem = browser.currentMediaItem
+        if (currentItem == null) {
+            songTitle = "Nessun brano in riproduzione"
+            songArtist = ""
+            lyricsText = ""
+            currentSongId = null
+            invalidate()
+            return
+        }
+
+        val title = currentItem.mediaMetadata.title?.toString() ?: "Sconosciuto"
+        val artist = currentItem.mediaMetadata.artist?.toString() ?: ""
+        val mediaId = currentItem.mediaId
+        val songId = mediaId.substringAfterLast("/")
+
+        if (songId == currentSongId) return
+        currentSongId = songId
+        songTitle = title
+        songArtist = artist
+        lyricsText = "Caricamento testo..."
+        invalidate()
+
+        fetchLyricsFromBrowser()
+    }
+
+    private fun fetchLyricsFromBrowser() {
+        val browser = session?.mediaBrowser ?: return
+        val future = browser.getChildren("lyrics", 0, 200, null)
+        future.addListener({
+            try {
+                val result = future.get()
+                val items = result.value ?: emptyList()
+                if (items.isEmpty()) {
+                    lyricsText = "Testo non trovato"
+                } else if (items.size == 1 && (items[0].mediaId == "lyrics/no_track" || items[0].mediaId == "lyrics/not_found")) {
+                    lyricsText = items[0].mediaMetadata.title?.toString() ?: "Testo non trovato"
+                } else {
+                    lyricsText = items.joinToString("\n") { it.mediaMetadata.title?.toString() ?: "" }
+                }
+            } catch (e: Exception) {
+                lyricsText = "Errore durante il caricamento"
+            }
+            invalidate()
+        }, MoreExecutors.directExecutor())
+    }
+
+    override fun onGetTemplate(): Template {
+        val browser = session?.mediaBrowser
+        val playPauseIconRes = if (isPlaying) R.drawable.pause else R.drawable.play
+        
+        val builder = androidx.car.app.model.LongMessageTemplate.Builder(
+            if (lyricsText.isBlank()) "Avvia la musica per vedere il testo" else lyricsText
+        )
+            .setTitle("$songTitle${if (songArtist.isNotEmpty()) " - $songArtist" else ""}")
+            .setHeaderAction(Action.BACK)
+            
+        builder.setActionStrip(
+            ActionStrip.Builder()
+                .addAction(
+                    Action.Builder()
+                        .setTitle("Traduci")
+                        .setIcon(CarIcon.Builder(IconCompat.createWithResource(carCtx, R.drawable.translate)).build())
+                        .setOnClickListener {
+                            if (browser != null) {
+                                browser.sendCustomCommand(
+                                    com.nikhil.yt.constants.MediaSessionConstants.CommandTranslateLyrics,
+                                    android.os.Bundle.EMPTY
+                                )
+                                lyricsText = "Traduzione in corso..."
+                                invalidate()
+                                handler.postDelayed({ fetchLyricsFromBrowser() }, 3000)
+                            }
+                        }
+                        .build()
+                )
+                .build()
+        )
+
+        builder.addAction(
+            Action.Builder()
+                .setIcon(CarIcon.Builder(IconCompat.createWithResource(carCtx, R.drawable.skip_previous)).build())
+                .setOnClickListener {
+                    browser?.seekToPrevious()
+                }
+                .build()
+        )
+        builder.addAction(
+            Action.Builder()
+                .setIcon(CarIcon.Builder(IconCompat.createWithResource(carCtx, playPauseIconRes)).build())
+                .setOnClickListener {
+                    if (isPlaying) browser?.pause() else browser?.play()
+                }
+                .build()
+        )
+        builder.addAction(
+            Action.Builder()
+                .setIcon(CarIcon.Builder(IconCompat.createWithResource(carCtx, R.drawable.skip_next)).build())
+                .setOnClickListener {
+                    browser?.seekToNext()
+                }
+                .build()
+        )
+
+        return builder.build()
     }
 }
