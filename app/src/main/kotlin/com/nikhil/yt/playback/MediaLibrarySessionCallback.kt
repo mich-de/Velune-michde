@@ -199,7 +199,7 @@ constructor(
             val items = ArrayList<MediaItem>(min(requested, 200))
 
             val songs = database.searchSongs(q, previewSize = requested).first()
-            items += songs.map { it.toMediaItem(MusicService.SONG) }
+            items += songs.map { it.toMediaItemWithPath(MusicService.SONG) }
 
             try {
                 val onlineResult = YouTube.search(q, YouTube.SearchFilter.FILTER_SONG).getOrNull()
@@ -278,8 +278,9 @@ constructor(
         params: MediaLibraryService.LibraryParams?,
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> =
         scope.future(Dispatchers.IO) {
-            LibraryResult.ofItemList(
-                when (parentId) {
+            println("VeluneBrowse: onGetChildren start. parentId='$parentId' page=$page pageSize=$pageSize browser=${browser.packageName}")
+            try {
+                val list = when (parentId) {
                     MusicService.ROOT ->
                         listOf(
                             browsableMediaItem(
@@ -333,7 +334,7 @@ constructor(
                         )
 
                     MusicService.SONG -> database.songsByCreateDateAsc().first()
-                        .map { it.toMediaItem(parentId) }
+                        .map { it.toMediaItemWithPath(parentId) }
 
                     MusicService.ARTIST ->
                         database.artistsByCreateDateAsc().first().map { artist ->
@@ -410,13 +411,13 @@ constructor(
                             parentId.startsWith("${MusicService.ARTIST}/") ->
                                 database.artistSongsByCreateDateAsc(parentId.removePrefix("${MusicService.ARTIST}/"))
                                     .first().map {
-                                    it.toMediaItem(parentId)
+                                    it.toMediaItemWithPath(parentId)
                                 }
 
                             parentId.startsWith("${MusicService.ALBUM}/") ->
                                 database.albumSongs(parentId.removePrefix("${MusicService.ALBUM}/"))
                                     .first().map {
-                                    it.toMediaItem(parentId)
+                                    it.toMediaItemWithPath(parentId)
                                 }
 
                             parentId.startsWith("${MusicService.PLAYLIST}/") ->
@@ -449,14 +450,19 @@ constructor(
                                             list.map { it.song }
                                         }
                                 }.first().map {
-                                    it.toMediaItem(parentId)
+                                    it.toMediaItemWithPath(parentId)
                                 }
 
-                            else -> emptyList()
+                              else -> emptyList()
                         }
-                },
-                params,
-            )
+                }
+                println("VeluneBrowse: returning ${list.size} children for parentId='$parentId'")
+                LibraryResult.ofItemList(ImmutableList.copyOf(list), params)
+            } catch (e: Exception) {
+                println("VeluneBrowse: onGetChildren failed for parentId='$parentId': ${e.message}")
+                e.printStackTrace()
+                LibraryResult.ofItemList(ImmutableList.of(), params)
+            }
         }
 
     override fun onGetItem(
@@ -533,7 +539,7 @@ constructor(
 
                 mediaId.startsWith("${MusicService.SONG}/") ->
                     database.song(mediaId.removePrefix("${MusicService.SONG}/")).first()?.let {
-                        LibraryResult.ofItem(it.toMediaItem(MusicService.SONG), null)
+                        LibraryResult.ofItem(it.toMediaItemWithPath(MusicService.SONG), null)
                     } ?: LibraryResult.ofError(SessionError.ERROR_UNKNOWN)
 
                 mediaId.startsWith("${MusicService.ARTIST}/") ->
@@ -742,7 +748,7 @@ constructor(
                 .build(),
         ).build()
 
-    private fun Song.toMediaItem(path: String) =
+    private fun Song.toMediaItemWithPath(path: String) =
         MediaItem
             .Builder()
             .setMediaId("$path/$id")
