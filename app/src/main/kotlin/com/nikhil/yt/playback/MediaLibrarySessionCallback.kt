@@ -94,15 +94,24 @@ constructor(
             .add(Player.COMMAND_SET_REPEAT_MODE)
             .build()
 
+        val sessionCommands = connectionResult.availableSessionCommands
+            .buildUpon()
+            .add(MediaSessionConstants.CommandToggleLike)
+            .add(MediaSessionConstants.CommandToggleStartRadio)
+            .add(MediaSessionConstants.CommandToggleLibrary)
+            .add(MediaSessionConstants.CommandToggleShuffle)
+            .add(MediaSessionConstants.CommandToggleRepeatMode)
+            .add(SessionCommand(SessionCommand.COMMAND_CODE_LIBRARY_SEARCH))
+            .add(SessionCommand(SessionCommand.COMMAND_CODE_LIBRARY_GET_SEARCH_RESULT))
+            .add(SessionCommand(SessionCommand.COMMAND_CODE_LIBRARY_GET_CHILDREN))
+            .add(SessionCommand(SessionCommand.COMMAND_CODE_LIBRARY_GET_ITEM))
+            .add(SessionCommand(SessionCommand.COMMAND_CODE_LIBRARY_GET_LIBRARY_ROOT))
+            .add(SessionCommand(SessionCommand.COMMAND_CODE_LIBRARY_SUBSCRIBE))
+            .add(SessionCommand(SessionCommand.COMMAND_CODE_LIBRARY_UNSUBSCRIBE))
+            .build()
+
         return MediaSession.ConnectionResult.accept(
-            connectionResult.availableSessionCommands
-                .buildUpon()
-                .add(MediaSessionConstants.CommandToggleLike)
-                .add(MediaSessionConstants.CommandToggleStartRadio)
-                .add(MediaSessionConstants.CommandToggleLibrary)
-                .add(MediaSessionConstants.CommandToggleShuffle)
-                .add(MediaSessionConstants.CommandToggleRepeatMode)
-                .build(),
+            sessionCommands,
             playerCommands,
         )
     }
@@ -156,10 +165,12 @@ constructor(
     ): ListenableFuture<LibraryResult<Void>> =
         scope.future(Dispatchers.IO) {
             val q = query.trim()
+            println("VeluneSearch: onSearch query='$q'")
             if (q.isNotBlank()) {
                 val songsCount = database.searchSongs(q, previewSize = 50).first().size
                 val artistsCount = database.searchArtists(q, previewSize = 50).first().size
                 val totalCount = songsCount + artistsCount
+                println("VeluneSearch: onSearch found totalCount=$totalCount (songs=$songsCount, artists=$artistsCount)")
                 session.notifySearchResultChanged(browser, query, totalCount, params)
             }
             LibraryResult.ofVoid(params)
@@ -175,6 +186,7 @@ constructor(
     ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> =
         scope.future(Dispatchers.IO) {
             val q = query.trim()
+            println("VeluneSearch: onGetSearchResult query='$q' page=$page pageSize=$pageSize")
             if (q.isBlank() || pageSize <= 0 || page < 0) {
                 return@future LibraryResult.ofItemList(emptyList(), params)
             }
