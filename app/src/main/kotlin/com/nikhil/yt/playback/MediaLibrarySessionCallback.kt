@@ -171,8 +171,12 @@ constructor(
             println("VeluneSearch: onSearch query='$q'")
             if (q.isNotBlank()) {
                 val localSongsCount = database.searchSongs(q, previewSize = 20).first().size
-                val onlineResult = YouTube.search(q, YouTube.SearchFilter.FILTER_SONG).getOrNull()
-                val onlineSongsCount = onlineResult?.items?.filterIsInstance<SongItem>()?.size ?: 0
+                val onlineResult = YouTube.search(q, YouTube.SearchFilter.FILTER_SONG)
+                if (onlineResult.isFailure) {
+                    println("VeluneSearch: onSearch online search failed: ${onlineResult.exceptionOrNull()?.message}")
+                    onlineResult.exceptionOrNull()?.printStackTrace()
+                }
+                val onlineSongsCount = onlineResult.getOrNull()?.items?.filterIsInstance<SongItem>()?.size ?: 0
                 val totalCount = localSongsCount + onlineSongsCount
                 println("VeluneSearch: onSearch found totalCount=$totalCount (local=$localSongsCount, online=$onlineSongsCount)")
                 session.notifySearchResultChanged(browser, query, totalCount, params)
@@ -204,8 +208,12 @@ constructor(
             items += songs.map { it.toMediaItemWithPath(MusicService.SONG) }
 
             try {
-                val onlineResult = YouTube.search(q, YouTube.SearchFilter.FILTER_SONG).getOrNull()
-                val onlineSongs = onlineResult?.items?.filterIsInstance<SongItem>() ?: emptyList()
+                val onlineResult = YouTube.search(q, YouTube.SearchFilter.FILTER_SONG)
+                if (onlineResult.isFailure) {
+                    println("VeluneSearch: onGetSearchResult online search failed: ${onlineResult.exceptionOrNull()?.message}")
+                    onlineResult.exceptionOrNull()?.printStackTrace()
+                }
+                val onlineSongs = onlineResult.getOrNull()?.items?.filterIsInstance<SongItem>() ?: emptyList()
                 items += onlineSongs.map { song ->
                     val original = song.toMediaItem()
                     MediaItem.Builder()
@@ -379,7 +387,7 @@ constructor(
                                 ),
                                 artist.artist.thumbnailUrl?.toUri(),
                                 MediaMetadata.MEDIA_TYPE_ARTIST,
-                                browsableHint = CONTENT_STYLE_GRID_ITEM,
+                                browsableHint = CONTENT_STYLE_LIST_ITEM,
                             )
                         }
 
@@ -393,7 +401,7 @@ constructor(
                                 },
                                 album.album.thumbnailUrl?.toUri(),
                                 MediaMetadata.MEDIA_TYPE_ALBUM,
-                                browsableHint = CONTENT_STYLE_GRID_ITEM,
+                                browsableHint = CONTENT_STYLE_LIST_ITEM,
                             )
                         }
 
@@ -437,7 +445,7 @@ constructor(
                                         ),
                                         playlist.thumbnails.firstOrNull()?.toUri(),
                                         MediaMetadata.MEDIA_TYPE_PLAYLIST,
-                                        browsableHint = CONTENT_STYLE_GRID_ITEM,
+                                        browsableHint = CONTENT_STYLE_LIST_ITEM,
                                     )
                                 }
                     }
