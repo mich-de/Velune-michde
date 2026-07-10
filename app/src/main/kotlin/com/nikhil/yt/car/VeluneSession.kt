@@ -26,6 +26,8 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import com.nikhil.yt.R
 import com.nikhil.yt.playback.MusicService
+import com.nikhil.yt.innertube.YouTube
+import kotlinx.coroutines.flow.first
 
 private val handler = Handler(Looper.getMainLooper())
 
@@ -291,18 +293,125 @@ private class BrowseScreen(
 }
 
 private class SearchScreen(carContext: CarContext) : BaseScreen(carContext) {
+    private var suggestions: List<String> = emptyList()
+    private var history: List<String> = emptyList()
+    private var currentQuery = ""
+
+    init {
+        loadHistory("")
+    }
+
+    private fun loadHistory(query: String) {
+        val db = com.nikhil.yt.db.InternalDatabase.newInstance(carCtx)
+        val thread = Thread {
+            try {
+                val list = kotlinx.coroutines.runBlocking {
+                    db.searchHistory(query).first()
+                }
+                history = list.map { it.query }.take(6)
+                invalidate()
+            } catch (_: Exception) {}
+        }
+        thread.start()
+    }
+
+    private fun fetchSuggestions(query: String) {
+        if (query.isBlank()) {
+            suggestions = emptyList()
+            loadHistory("")
+            return
+        }
+
+        loadHistory(query)
+
+        val thread = Thread {
+            try {
+                val result = kotlinx.coroutines.runBlocking {
+                    YouTube.searchSuggestions(query)
+                }
+                if (result.isSuccess) {
+                    val searchSuggestions = result.getOrNull()
+                    suggestions = searchSuggestions?.queries ?: emptyList()
+                } else {
+                    suggestions = emptyList()
+                }
+                invalidate()
+            } catch (_: Exception) {
+                suggestions = emptyList()
+            }
+        }
+        thread.start()
+    }
+
+    private fun saveQuery(query: String) {
+        val db = com.nikhil.yt.db.InternalDatabase.newInstance(carCtx)
+        db.query {
+            insert(com.nikhil.yt.db.entities.SearchHistory(query = query))
+        }
+    }
+
     override fun onGetTemplate(): Template {
+        val itemListBuilder = ItemList.Builder()
+        
+        for (item in history) {
+            itemListBuilder.addItem(
+                Row.Builder()
+                    .setTitle(item)
+                    .setImage(
+                        CarIcon.Builder(IconCompat.createWithResource(carCtx, R.drawable.history)).build(),
+                        Row.IMAGE_TYPE_SMALL
+                    )
+                    .setOnClickListener {
+                        saveQuery(item)
+                        screenManager.push(SearchResultScreen(carCtx, item))
+                    }
+                    .build()
+            )
+        }
+
+        for (item in suggestions) {
+            if (history.contains(item)) continue
+            itemListBuilder.addItem(
+                Row.Builder()
+                    .setTitle(item)
+                    .setImage(
+                        CarIcon.Builder(IconCompat.createWithResource(carCtx, R.drawable.search)).build(),
+                        Row.IMAGE_TYPE_SMALL
+                    )
+                    .setOnClickListener {
+                        saveQuery(item)
+                        screenManager.push(SearchResultScreen(carCtx, item))
+                    }
+                    .build()
+            )
+        }
+
+        if (history.isEmpty() && suggestions.isEmpty()) {
+            if (currentQuery.isBlank()) {
+                itemListBuilder.setNoItemsMessage("Digita per cercare brani, album, artisti...")
+            } else {
+                itemListBuilder.setNoItemsMessage("Nessun suggerimento")
+            }
+        }
+
         return SearchTemplate.Builder(
             object : SearchTemplate.SearchCallback {
+                override fun onSearchTextChanged(searchText: String) {
+                    currentQuery = searchText
+                    fetchSuggestions(searchText)
+                }
+
                 override fun onSearchSubmitted(searchTerm: String) {
                     if (searchTerm.isNotBlank()) {
+                        saveQuery(searchTerm)
                         screenManager.push(SearchResultScreen(carCtx, searchTerm))
                     }
                 }
             }
         )
-            .setHeaderAction(Action.BACK)
-            .build()
+        .setItemList(itemListBuilder.build())
+        .setHeaderAction(Action.BACK)
+        .build()
     }
 }
 
@@ -329,20 +438,20 @@ private class SearchResultScreen(
             val resultFuture = browser.getSearchResult(query, 0, 100, null)
             resultFuture.addListener({
                 try {
-                val result = resultFuture.get()
-                items = result.value ?: emptyList()
-            } catch (e: Exception) {
-                session?.logError("loadSearchResults failed for query = $query", e)
-                items = emptyList()
-            }
-            isLoading = false
-            invalidate()
+                    val result = resultFuture.get()
+                    items = result.value ?: emptyList()
+                } catch (e: Exception) {
+                    session?.logError("loadSearchResults failed for query = $query", e)
+                    items = emptyList()
+                }
+                isLoading = false
+                invalidate()
             }, MoreExecutors.directExecutor())
         }, MoreExecutors.directExecutor())
     }
 
     override fun onGetTemplate(): Template {
-        val resultsTitle = "Search Results"
+        val resultsTitle = "Risultati per: $query"
         if (isLoading) {
             return ListTemplate.Builder()
                 .setTitle(resultsTitle)
@@ -353,37 +462,106 @@ private class SearchResultScreen(
 
         val itemListBuilder = ItemList.Builder()
         if (items.isEmpty()) {
-            itemListBuilder.setNoItemsMessage("No results found")
+            itemListBuilder.setNoItemsMessage("Nessun risultato trovato")
         } else {
-            for (item in items) {
-                val isBrowsable = item.mediaMetadata.isBrowsable == true
-                val rowBuilder = Row.Builder()
-                    .setTitle(item.mediaMetadata.title?.toString() ?: "Unknown Song")
-                    .addText(item.mediaMetadata.artist?.toString() ?: item.mediaMetadata.albumTitle?.toString() ?: "")
+            val songsList = items.filter { it.mediaMetadata.isPlayable == true }
+            val albumsList = items.filter { it.mediaMetadata.mediaType == MediaMetadata.MEDIA_TYPE_ALBUM }
+            val artistsList = items.filter { it.mediaMetadata.mediaType == MediaMetadata.MEDIA_TYPE_ARTIST }
+            val playlistsList = items.filter { it.mediaMetadata.mediaType == MediaMetadata.MEDIA_TYPE_PLAYLIST }
 
-                if (isBrowsable) {
-                    val iconRes = when {
-                        item.mediaId.startsWith("artists") -> R.drawable.artist
-                        item.mediaId.startsWith("albums") -> R.drawable.album
-                        else -> R.drawable.queue_music
-                    }
-                    rowBuilder.setImage(
-                        CarIcon.Builder(IconCompat.createWithResource(carCtx, iconRes)).build(),
-                        Row.IMAGE_TYPE_SMALL
+            if (songsList.isNotEmpty()) {
+                itemListBuilder.addItem(
+                    Row.Builder()
+                        .setTitle("🎵 BRANI")
+                        .setEnabled(false)
+                        .build()
+                )
+                for (item in songsList) {
+                    itemListBuilder.addItem(
+                        Row.Builder()
+                            .setTitle(item.mediaMetadata.title?.toString() ?: "Brano sconosciuto")
+                            .addText(item.mediaMetadata.artist?.toString() ?: "")
+                            .setImage(
+                                CarIcon.Builder(IconCompat.createWithResource(carCtx, R.drawable.music_note)).build(),
+                                Row.IMAGE_TYPE_SMALL
+                            )
+                            .setOnClickListener {
+                                playSong(item)
+                            }
+                            .build()
                     )
-                    rowBuilder.setOnClickListener {
-                        screenManager.push(BrowseScreen(carCtx, item.mediaId, item.mediaMetadata.title?.toString() ?: ""))
-                    }
-                } else {
-                    rowBuilder.setImage(
-                        CarIcon.Builder(IconCompat.createWithResource(carCtx, R.drawable.music_note)).build(),
-                        Row.IMAGE_TYPE_SMALL
-                    )
-                    rowBuilder.setOnClickListener {
-                        playSong(item)
-                    }
                 }
-                itemListBuilder.addItem(rowBuilder.build())
+            }
+
+            if (albumsList.isNotEmpty()) {
+                itemListBuilder.addItem(
+                    Row.Builder()
+                        .setTitle("💿 ALBUM")
+                        .setEnabled(false)
+                        .build()
+                )
+                for (item in albumsList) {
+                    itemListBuilder.addItem(
+                        Row.Builder()
+                            .setTitle(item.mediaMetadata.title?.toString() ?: "Album sconosciuto")
+                            .addText(item.mediaMetadata.artist?.toString() ?: "")
+                            .setImage(
+                                CarIcon.Builder(IconCompat.createWithResource(carCtx, R.drawable.album)).build(),
+                                Row.IMAGE_TYPE_SMALL
+                            )
+                            .setOnClickListener {
+                                screenManager.push(BrowseScreen(carCtx, item.mediaId, item.mediaMetadata.title?.toString() ?: ""))
+                            }
+                            .build()
+                    )
+                }
+            }
+
+            if (artistsList.isNotEmpty()) {
+                itemListBuilder.addItem(
+                    Row.Builder()
+                        .setTitle("👤 ARTISTI")
+                        .setEnabled(false)
+                        .build()
+                )
+                for (item in artistsList) {
+                    itemListBuilder.addItem(
+                        Row.Builder()
+                            .setTitle(item.mediaMetadata.title?.toString() ?: "Artista sconosciuto")
+                            .setImage(
+                                CarIcon.Builder(IconCompat.createWithResource(carCtx, R.drawable.artist)).build(),
+                                Row.IMAGE_TYPE_SMALL
+                            )
+                            .setOnClickListener {
+                                screenManager.push(BrowseScreen(carCtx, item.mediaId, item.mediaMetadata.title?.toString() ?: ""))
+                            }
+                            .build()
+                    )
+                }
+            }
+
+            if (playlistsList.isNotEmpty()) {
+                itemListBuilder.addItem(
+                    Row.Builder()
+                        .setTitle("📂 PLAYLIST")
+                        .setEnabled(false)
+                        .build()
+                )
+                for (item in playlistsList) {
+                    itemListBuilder.addItem(
+                        Row.Builder()
+                            .setTitle(item.mediaMetadata.title?.toString() ?: "Playlist sconosciuta")
+                            .addText(item.mediaMetadata.subtitle?.toString() ?: "")
+                            .setImage(
+                                CarIcon.Builder(IconCompat.createWithResource(carCtx, R.drawable.queue_music)).build(),
+                                Row.IMAGE_TYPE_SMALL
+                            )
+                            .setOnClickListener {
+                                screenManager.push(BrowseScreen(carCtx, item.mediaId, item.mediaMetadata.title?.toString() ?: ""))
+                            }
+                            .build()
+                    )
+                }
             }
         }
 
