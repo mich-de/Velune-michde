@@ -27,6 +27,7 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.nikhil.yt.R
 import com.nikhil.yt.playback.MusicService
 import com.nikhil.yt.innertube.YouTube
+import com.nikhil.yt.extensions.toMediaItem
 import kotlinx.coroutines.flow.first
 
 private val handler = Handler(Looper.getMainLooper())
@@ -419,7 +420,10 @@ private class SearchResultScreen(
     carContext: CarContext,
     val query: String
 ) : BaseScreen(carContext) {
-    private var items: List<MediaItem> = emptyList()
+    private var songs: List<com.nikhil.yt.innertube.models.SongItem> = emptyList()
+    private var albums: List<com.nikhil.yt.innertube.models.AlbumItem> = emptyList()
+    private var artists: List<com.nikhil.yt.innertube.models.ArtistItem> = emptyList()
+    private var playlists: List<com.nikhil.yt.innertube.models.PlaylistItem> = emptyList()
     private var isLoading = true
 
     init {
@@ -427,27 +431,26 @@ private class SearchResultScreen(
     }
 
     private fun loadSearchResults() {
-        val browser = session?.mediaBrowser
-        if (browser == null) {
-            handler.postDelayed({ loadSearchResults() }, 500)
-            return
-        }
-        
-        val searchFuture = browser.search(query, null)
-        searchFuture.addListener({
-            val resultFuture = browser.getSearchResult(query, 0, 100, null)
-            resultFuture.addListener({
-                try {
-                    val result = resultFuture.get()
-                    items = result.value ?: emptyList()
-                } catch (e: Exception) {
-                    session?.logError("loadSearchResults failed for query = $query", e)
-                    items = emptyList()
+        Thread {
+            try {
+                val result = kotlinx.coroutines.runBlocking {
+                    YouTube.searchSummary(query)
                 }
-                isLoading = false
-                invalidate()
-            }, MoreExecutors.directExecutor())
-        }, MoreExecutors.directExecutor())
+                if (result.isSuccess) {
+                    val page = result.getOrNull()
+                    page?.summaries?.forEach { summary ->
+                        songs = songs + summary.items.filterIsInstance<com.nikhil.yt.innertube.models.SongItem>()
+                        albums = albums + summary.items.filterIsInstance<com.nikhil.yt.innertube.models.AlbumItem>()
+                        artists = artists + summary.items.filterIsInstance<com.nikhil.yt.innertube.models.ArtistItem>()
+                        playlists = playlists + summary.items.filterIsInstance<com.nikhil.yt.innertube.models.PlaylistItem>()
+                    }
+                }
+            } catch (e: Exception) {
+                session?.logError("searchSummary failed for query=$query", e)
+            }
+            isLoading = false
+            invalidate()
+        }.start()
     }
 
     override fun onGetTemplate(): Template {
@@ -461,103 +464,86 @@ private class SearchResultScreen(
         }
 
         val itemListBuilder = ItemList.Builder()
-        if (items.isEmpty()) {
+        val hasResults = songs.isNotEmpty() || albums.isNotEmpty() || artists.isNotEmpty() || playlists.isNotEmpty()
+
+        if (!hasResults) {
             itemListBuilder.setNoItemsMessage("Nessun risultato trovato")
         } else {
-            val songsList = items.filter { it.mediaMetadata.isPlayable == true }
-            val albumsList = items.filter { it.mediaMetadata.mediaType == MediaMetadata.MEDIA_TYPE_ALBUM }
-            val artistsList = items.filter { it.mediaMetadata.mediaType == MediaMetadata.MEDIA_TYPE_ARTIST }
-            val playlistsList = items.filter { it.mediaMetadata.mediaType == MediaMetadata.MEDIA_TYPE_PLAYLIST }
-
-            if (songsList.isNotEmpty()) {
+            if (songs.isNotEmpty()) {
                 itemListBuilder.addItem(
-                    Row.Builder()
-                        .setTitle("🎵 BRANI")
-                        .setEnabled(false)
-                        .build()
+                    Row.Builder().setTitle("🎵 BRANI").setEnabled(false).build()
                 )
-                for (item in songsList) {
+                for (song in songs) {
                     itemListBuilder.addItem(
                         Row.Builder()
-                            .setTitle(item.mediaMetadata.title?.toString() ?: "Brano sconosciuto")
-                            .addText(item.mediaMetadata.artist?.toString() ?: "")
+                            .setTitle(song.title)
+                            .addText(song.artists.joinToString { it.name })
                             .setImage(
                                 CarIcon.Builder(IconCompat.createWithResource(carCtx, R.drawable.music_note)).build(),
                                 Row.IMAGE_TYPE_SMALL
                             )
-                            .setOnClickListener {
-                                playSong(item)
-                            }
+                            .setOnClickListener { playSong(song) }
                             .build()
                     )
                 }
             }
 
-            if (albumsList.isNotEmpty()) {
+            if (albums.isNotEmpty()) {
                 itemListBuilder.addItem(
-                    Row.Builder()
-                        .setTitle("💿 ALBUM")
-                        .setEnabled(false)
-                        .build()
+                    Row.Builder().setTitle("💿 ALBUM").setEnabled(false).build()
                 )
-                for (item in albumsList) {
+                for (album in albums) {
                     itemListBuilder.addItem(
                         Row.Builder()
-                            .setTitle(item.mediaMetadata.title?.toString() ?: "Album sconosciuto")
-                            .addText(item.mediaMetadata.artist?.toString() ?: "")
+                            .setTitle(album.title)
+                            .addText(album.artists?.joinToString { it.name } ?: "")
                             .setImage(
                                 CarIcon.Builder(IconCompat.createWithResource(carCtx, R.drawable.album)).build(),
                                 Row.IMAGE_TYPE_SMALL
                             )
                             .setOnClickListener {
-                                screenManager.push(BrowseScreen(carCtx, item.mediaId, item.mediaMetadata.title?.toString() ?: ""))
+                                screenManager.push(BrowseScreen(carCtx, "${MusicService.ALBUM}/${album.id}", album.title))
                             }
                             .build()
                     )
                 }
             }
 
-            if (artistsList.isNotEmpty()) {
+            if (artists.isNotEmpty()) {
                 itemListBuilder.addItem(
-                    Row.Builder()
-                        .setTitle("👤 ARTISTI")
-                        .setEnabled(false)
-                        .build()
+                    Row.Builder().setTitle("👤 ARTISTI").setEnabled(false).build()
                 )
-                for (item in artistsList) {
+                for (artist in artists) {
                     itemListBuilder.addItem(
                         Row.Builder()
-                            .setTitle(item.mediaMetadata.title?.toString() ?: "Artista sconosciuto")
+                            .setTitle(artist.title)
                             .setImage(
                                 CarIcon.Builder(IconCompat.createWithResource(carCtx, R.drawable.artist)).build(),
                                 Row.IMAGE_TYPE_SMALL
                             )
                             .setOnClickListener {
-                                screenManager.push(BrowseScreen(carCtx, item.mediaId, item.mediaMetadata.title?.toString() ?: ""))
+                                screenManager.push(BrowseScreen(carCtx, "${MusicService.ARTIST}/${artist.id}", artist.title))
                             }
                             .build()
                     )
                 }
             }
 
-            if (playlistsList.isNotEmpty()) {
+            if (playlists.isNotEmpty()) {
                 itemListBuilder.addItem(
-                    Row.Builder()
-                        .setTitle("📂 PLAYLIST")
-                        .setEnabled(false)
-                        .build()
+                    Row.Builder().setTitle("📂 PLAYLIST").setEnabled(false).build()
                 )
-                for (item in playlistsList) {
+                for (playlist in playlists) {
                     itemListBuilder.addItem(
                         Row.Builder()
-                            .setTitle(item.mediaMetadata.title?.toString() ?: "Playlist sconosciuta")
-                            .addText(item.mediaMetadata.subtitle?.toString() ?: "")
+                            .setTitle(playlist.title)
+                            .addText(playlist.author?.name ?: "")
                             .setImage(
                                 CarIcon.Builder(IconCompat.createWithResource(carCtx, R.drawable.queue_music)).build(),
                                 Row.IMAGE_TYPE_SMALL
                             )
                             .setOnClickListener {
-                                screenManager.push(BrowseScreen(carCtx, item.mediaId, item.mediaMetadata.title?.toString() ?: ""))
+                                screenManager.push(BrowseScreen(carCtx, "${MusicService.PLAYLIST}/${playlist.id}", playlist.title))
                             }
                             .build()
                     )
@@ -572,9 +558,10 @@ private class SearchResultScreen(
             .build()
     }
 
-    private fun playSong(item: MediaItem) {
+    private fun playSong(song: com.nikhil.yt.innertube.models.SongItem) {
         val browser = session?.mediaBrowser ?: return
-        browser.setMediaItems(listOf(item))
+        val mediaItem = song.toMediaItem()
+        browser.setMediaItems(listOf(mediaItem))
         browser.prepare()
         browser.play()
     }
