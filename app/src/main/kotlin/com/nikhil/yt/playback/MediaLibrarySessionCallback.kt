@@ -274,16 +274,7 @@ constructor(
             val q = query.trim()
             println("VeluneSearch: onSearch query='$q'")
             if (q.isNotBlank()) {
-                val localSongsCount = database.searchSongs(q, previewSize = 20).first().size
-                val onlineResult = YouTube.search(q, YouTube.SearchFilter.FILTER_SONG)
-                if (onlineResult.isFailure) {
-                    println("VeluneSearch: onSearch online search failed: ${onlineResult.exceptionOrNull()?.message}")
-                    onlineResult.exceptionOrNull()?.printStackTrace()
-                }
-                val onlineSongsCount = onlineResult.getOrNull()?.items?.filterIsInstance<SongItem>()?.size ?: 0
-                val totalCount = localSongsCount + onlineSongsCount
-                println("VeluneSearch: onSearch found totalCount=$totalCount (local=$localSongsCount, online=$onlineSongsCount)")
-                session.notifySearchResultChanged(browser, query, totalCount, params)
+                session.notifySearchResultChanged(browser, query, 25, params)
             }
             LibraryResult.ofVoid(params)
         }
@@ -304,12 +295,7 @@ constructor(
             }
 
             val cleanPageSize = if (pageSize > 100) 100 else pageSize
-            val cleanPage = if (page > 10) 10 else page
-            val requested = (cleanPage + 1) * cleanPageSize
-            val items = ArrayList<MediaItem>(min(requested, 200))
-
-            val songs = database.searchSongs(q, previewSize = requested).first()
-            items += songs.map { it.toMediaItemWithPath(MusicService.SONG) }
+            val items = ArrayList<MediaItem>()
 
             try {
                 val onlineResult = YouTube.searchSummary(q)
@@ -368,63 +354,10 @@ constructor(
                     }
                 }
             } catch (e: Exception) {
-                println("VeluneSearch: Online search summary failed: ${e.message}")
+                println("VeluneSearch: searchSummary failed: ${e.message}")
             }
 
-            if (items.size < requested) {
-                val remaining = requested - items.size
-                val artists = database.searchArtists(q, previewSize = remaining).first()
-                items +=
-                    artists.map { artist ->
-                        browsableMediaItem(
-                            "${MusicService.ARTIST}/${artist.id}",
-                            artist.title,
-                            context.resources.getQuantityString(
-                                R.plurals.n_song,
-                                artist.songCount,
-                                artist.songCount,
-                            ),
-                            artist.thumbnailUrl?.toUri(),
-                            MediaMetadata.MEDIA_TYPE_ARTIST,
-                        )
-                    }
-            }
-
-            if (items.size < requested) {
-                val remaining = requested - items.size
-                val albums = database.searchAlbums(q, previewSize = remaining).first()
-                items +=
-                    albums.map { album ->
-                        browsableMediaItem(
-                            "${MusicService.ALBUM}/${album.id}",
-                            album.title,
-                            album.artists.joinToString { it.name },
-                            album.thumbnailUrl?.toUri(),
-                            MediaMetadata.MEDIA_TYPE_ALBUM,
-                        )
-                    }
-            }
-
-            if (items.size < requested) {
-                val remaining = requested - items.size
-                val playlists = database.searchPlaylists(q, previewSize = remaining).first()
-                items +=
-                    playlists.map { playlist ->
-                        browsableMediaItem(
-                            "${MusicService.PLAYLIST}/${playlist.id}",
-                            playlist.title,
-                            context.resources.getQuantityString(
-                                R.plurals.n_song,
-                                playlist.songCount,
-                                playlist.songCount,
-                            ),
-                            playlist.thumbnails.firstOrNull()?.toUri(),
-                            MediaMetadata.MEDIA_TYPE_PLAYLIST,
-                        )
-                    }
-            }
-
-            val from = cleanPage * cleanPageSize
+            val from = page * cleanPageSize
             if (from >= items.size) return@future LibraryResult.ofItemList(emptyList(), params)
             val to = min(from + cleanPageSize, items.size)
 
@@ -1205,6 +1138,26 @@ constructor(
                             startPositionMs,
                         )
                     }
+
+                    // Handle plain YouTube video IDs from AA search results
+                    // (SongItem.toMediaItem() sets mediaId = videoId with no prefix)
+                    val mediaId = firstItem.mediaId
+                    if (mediaId.isNotBlank() && !mediaId.contains("/") && firstItem.localConfiguration?.uri != null) {
+                        return@future MediaSession.MediaItemsWithStartPosition(
+                            mediaItems.map { item ->
+                                item.buildUpon()
+                                    .setMediaMetadata(
+                                        item.mediaMetadata.buildUpon()
+                                            .setIsPlayable(true)
+                                            .build()
+                                    )
+                                    .build()
+                            },
+                            0,
+                            startPositionMs,
+                        )
+                    }
+
                     val query = firstItem.requestMetadata.searchQuery?.trim().orEmpty()
                     if (query.isBlank()) return@future defaultResult
 

@@ -256,11 +256,7 @@ dependencies {
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_21)
-        freeCompilerArgs.add("-Xannotation-default-target=param-property")
-        freeCompilerArgs.addAll(
-            "-opt-in=kotlin.RequiresOptIn",
-            "-Xcontext-receivers"
-        )
+        freeCompilerArgs.add("-opt-in=kotlin.RequiresOptIn")
         // Suppress warnings
         suppressWarnings.set(true)
     }
@@ -270,10 +266,21 @@ configurations.configureEach {
     resolutionStrategy.force(
         "androidx.compose.runtime:runtime:${libs.versions.compose.get()}",
         "androidx.compose.foundation:foundation:${libs.versions.compose.get()}",
+        "androidx.compose.foundation:foundation-layout:${libs.versions.compose.get()}",
         "androidx.compose.ui:ui:${libs.versions.compose.get()}",
+        "androidx.compose.ui:ui-geometry:${libs.versions.compose.get()}",
+        "androidx.compose.ui:ui-graphics:${libs.versions.compose.get()}",
+        "androidx.compose.ui:ui-text:${libs.versions.compose.get()}",
+        "androidx.compose.ui:ui-unit:${libs.versions.compose.get()}",
         "androidx.compose.ui:ui-util:${libs.versions.compose.get()}",
         "androidx.compose.ui:ui-tooling:${libs.versions.compose.get()}",
+        "androidx.compose.ui:ui-tooling-preview:${libs.versions.compose.get()}",
+        "androidx.compose.animation:animation:${libs.versions.compose.get()}",
         "androidx.compose.animation:animation-graphics:${libs.versions.compose.get()}",
+        "androidx.compose.material3:material3:${libs.versions.material3.get()}",
+        "androidx.compose.material:material:${libs.versions.compose.get()}",
+        "androidx.compose.material:material-icons-core:${libs.versions.compose.get()}",
+        "androidx.compose.material:material-ripple:${libs.versions.compose.get()}",
     )
 }
 

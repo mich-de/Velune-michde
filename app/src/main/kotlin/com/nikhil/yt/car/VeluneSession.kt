@@ -88,7 +88,8 @@ class VeluneSession : Session() {
             .setMediaId(mediaId)
             .setMediaMetadata(
                 MediaMetadata.Builder()
-                    .setIsBrowsable(true)
+                    .setIsBrowsable(false)
+                    .setIsPlayable(true)
                     .build()
             )
             .build()
@@ -121,22 +122,26 @@ private class BrowseRootScreen(carContext: CarContext) : BaseScreen(carContext) 
             addItem(categoryRow(
                 "Preferiti",
                 R.drawable.favorite,
-                "playlists/0"
+                "${com.nikhil.yt.playback.MusicService.PLAYLIST}/${com.nikhil.yt.db.entities.PlaylistEntity.LIKED_PLAYLIST_ID}",
+                playable = true
             ))
             addItem(categoryRow(
                 "Scaricate",
                 R.drawable.download,
-                "playlists/2"
+                "${com.nikhil.yt.playback.MusicService.PLAYLIST}/${com.nikhil.yt.db.entities.PlaylistEntity.DOWNLOADED_PLAYLIST_ID}",
+                playable = true
             ))
             addItem(categoryRow(
                 "Storia",
                 R.drawable.history,
-                "recent"
+                com.nikhil.yt.playback.MusicService.RECENT,
+                playable = true
             ))
             addItem(categoryRow(
                 "Coda",
                 R.drawable.queue_music,
-                "queue"
+                com.nikhil.yt.playback.MusicService.QUEUE,
+                playable = true
             ))
             addItem(categoryRow(
                 "Testo",
@@ -158,7 +163,12 @@ private class BrowseRootScreen(carContext: CarContext) : BaseScreen(carContext) 
             .build()
     }
 
-    private fun categoryRow(title: String, iconRes: Int, mediaId: String): Row =
+    private fun categoryRow(
+        title: String,
+        iconRes: Int,
+        mediaId: String,
+        playable: Boolean = false
+    ): Row =
         Row.Builder()
             .setTitle(title)
             .setImage(
@@ -168,6 +178,10 @@ private class BrowseRootScreen(carContext: CarContext) : BaseScreen(carContext) 
             .setOnClickListener {
                 if (mediaId == "lyrics") {
                     screenManager.push(NowPlayingScreen(carCtx))
+                } else if (mediaId == "library") {
+                    screenManager.push(BrowseScreen(carCtx, mediaId, title))
+                } else if (playable) {
+                    session?.playCategory(mediaId)
                 } else {
                     screenManager.push(BrowseScreen(carCtx, mediaId, title))
                 }
